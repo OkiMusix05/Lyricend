@@ -1,0 +1,202 @@
+[debug] [2023-06-06T06:15:23.620Z] ----------------------------------------------------------------------
+[debug] [2023-06-06T06:15:23.622Z] Command:       /usr/local/bin/firebase /Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase init
+[debug] [2023-06-06T06:15:23.623Z] CLI Version:   9.23.1
+[debug] [2023-06-06T06:15:23.623Z] Platform:      darwin
+[debug] [2023-06-06T06:15:23.623Z] Node Version:  v12.18.1
+[debug] [2023-06-06T06:15:23.624Z] Time:          Tue Jun 06 2023 01:15:23 GMT-0500 (Central Daylight Time)
+[debug] [2023-06-06T06:15:23.624Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-06-06T06:15:23.651Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-06-06T06:15:23.651Z] > authorizing via signed-in user (okiaguayo@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/octavio/Desktop/Coding/NodeJS/Lyrics App/lyricend
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2023-06-06T06:16:20.306Z] > refreshing access token with scopes: []
+[debug] [2023-06-06T06:16:20.307Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token  
+ <request body omitted>
+[debug] [2023-06-06T06:16:20.548Z] <<< HTTP RESPONSE 400 {"pragma":"no-cache","date":"Tue, 06 Jun 2023 06:16:20 GMT","cache-control":"no-cache, no-store, max-age=0, must-revalidate","expires":"Mon, 01 Jan 1990 00:00:00 GMT","content-type":"application/json; charset=utf-8","vary":"X-Origin, Referer, Origin,Accept-Encoding","server":"scaffolding on HTTPServer2","x-xss-protection":"0","x-frame-options":"SAMEORIGIN","x-content-type-options":"nosniff","alt-svc":"h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000","accept-ranges":"none","transfer-encoding":"chunked"}
+[debug] [2023-06-06T06:16:20.550Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2023-06-06T06:16:20.706Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 401
+[debug] [2023-06-06T06:16:20.706Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2023-06-06T06:16:20.706Z] HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+[debug] [2023-06-06T06:16:20.837Z] FirebaseError: HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at module.exports (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/responseToError.js:38:12)
+    at Client.doRequest (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/apiv2.js:241:23)
+    at processTicksAndRejections (internal/process/task_queues.js:97:5)
+    at async Client.request (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/apiv2.js:96:20)
+    at async getProjectPage (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/management/projects.js:233:17)
+    at async getFirebaseProjectPage (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/management/projects.js:250:23)
+    at async selectProjectInteractively (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/management/projects.js:95:41)
+    at async Object.doSetup [as project] (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/init/features/project.js:88:27)
+    at async init (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/init/index.js:19:9)
+[error] 
+[error] Error: Failed to list Firebase projects. See firebase-debug.log for more info.
+[debug] [2023-06-06T06:18:03.234Z] ----------------------------------------------------------------------
+[debug] [2023-06-06T06:18:03.283Z] Command:       /usr/local/bin/firebase /Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase init
+[debug] [2023-06-06T06:18:03.284Z] CLI Version:   9.23.1
+[debug] [2023-06-06T06:18:03.284Z] Platform:      darwin
+[debug] [2023-06-06T06:18:03.284Z] Node Version:  v12.18.1
+[debug] [2023-06-06T06:18:03.593Z] Time:          Tue Jun 06 2023 01:18:03 GMT-0500 (Central Daylight Time)
+[debug] [2023-06-06T06:18:03.593Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-06-06T06:18:03.664Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-06-06T06:18:03.665Z] > authorizing via signed-in user (okiaguayo@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/octavio/Desktop/Coding/NodeJS/Lyrics App/lyricend
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2023-06-06T06:18:15.960Z] > refreshing access token with scopes: []
+[debug] [2023-06-06T06:18:15.960Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token  
+ <request body omitted>
+[debug] [2023-06-06T06:18:16.612Z] <<< HTTP RESPONSE 400 {"pragma":"no-cache","cache-control":"no-cache, no-store, max-age=0, must-revalidate","expires":"Mon, 01 Jan 1990 00:00:00 GMT","date":"Tue, 06 Jun 2023 06:18:16 GMT","content-type":"application/json; charset=utf-8","vary":"X-Origin, Referer, Origin,Accept-Encoding","server":"scaffolding on HTTPServer2","x-xss-protection":"0","x-frame-options":"SAMEORIGIN","x-content-type-options":"nosniff","alt-svc":"h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000","accept-ranges":"none","transfer-encoding":"chunked"}
+[debug] [2023-06-06T06:18:16.614Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2023-06-06T06:18:16.849Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 401
+[debug] [2023-06-06T06:18:16.849Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2023-06-06T06:18:16.850Z] HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+[debug] [2023-06-06T06:18:16.993Z] FirebaseError: HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at module.exports (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/responseToError.js:38:12)
+    at Client.doRequest (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/apiv2.js:241:23)
+    at processTicksAndRejections (internal/process/task_queues.js:97:5)
+    at async Client.request (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/apiv2.js:96:20)
+    at async getProjectPage (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/management/projects.js:233:17)
+    at async getFirebaseProjectPage (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/management/projects.js:250:23)
+    at async selectProjectInteractively (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/management/projects.js:95:41)
+    at async Object.doSetup [as project] (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/init/features/project.js:88:27)
+    at async init (/Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/init/index.js:19:9)
+[error] 
+[error] Error: Failed to list Firebase projects. See firebase-debug.log for more info.
+[debug] [2023-06-06T06:25:00.416Z] ----------------------------------------------------------------------
+[debug] [2023-06-06T06:25:00.464Z] Command:       /usr/local/bin/firebase /Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase init
+[debug] [2023-06-06T06:25:00.464Z] CLI Version:   9.23.1
+[debug] [2023-06-06T06:25:00.465Z] Platform:      darwin
+[debug] [2023-06-06T06:25:00.465Z] Node Version:  v12.18.1
+[debug] [2023-06-06T06:25:00.841Z] Time:          Tue Jun 06 2023 01:25:00 GMT-0500 (Central Daylight Time)
+[debug] [2023-06-06T06:25:00.841Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-06-06T06:25:00.879Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-06-06T06:25:00.880Z] > authorizing via signed-in user (okiaguayo@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/octavio/Desktop/Coding/NodeJS/Lyrics App/lyricend
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2023-06-06T06:25:10.839Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2023-06-06T06:25:11.833Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2023-06-06T06:25:11.833Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2023-06-06T06:25:33.649Z] Error: write EIO
+    at afterWriteDispatched (internal/stream_base_commons.js:154:25)
+    at writeGeneric (internal/stream_base_commons.js:145:3)
+    at WriteStream.Socket._writeGeneric (net.js:786:11)
+    at WriteStream.Socket._write (net.js:798:8)
+    at doWrite (_stream_writable.js:403:12)
+    at writeOrBuffer (_stream_writable.js:387:5)
+    at WriteStream.Writable.write (_stream_writable.js:318:11)
+    at EventEmitter.signalExit.alwaysLast (/Users/octavio/.cache/firebase/tools/lib/node_modules/restore-cursor/index.js:7:18)
+    at EventEmitter.emit (events.js:315:20)
+    at EventEmitter.emit (domain.js:482:12)
+    at emit (/Users/octavio/.cache/firebase/tools/lib/node_modules/signal-exit/index.js:103:13)
+    at process.listener (/Users/octavio/.cache/firebase/tools/lib/node_modules/signal-exit/index.js:123:9)
+    at process.emit (events.js:315:20)
+[debug] [2023-06-06T06:30:09.769Z] ----------------------------------------------------------------------
+[debug] [2023-06-06T06:30:09.771Z] Command:       /usr/local/bin/firebase /Users/octavio/.cache/firebase/tools/lib/node_modules/firebase-tools/lib/bin/firebase init
+[debug] [2023-06-06T06:30:09.771Z] CLI Version:   9.23.1
+[debug] [2023-06-06T06:30:09.771Z] Platform:      darwin
+[debug] [2023-06-06T06:30:09.771Z] Node Version:  v12.18.1
+[debug] [2023-06-06T06:30:09.773Z] Time:          Tue Jun 06 2023 01:30:09 GMT-0500 (Central Daylight Time)
+[debug] [2023-06-06T06:30:09.776Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-06-06T06:30:09.784Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-06-06T06:30:09.784Z] > authorizing via signed-in user (okimusix.business@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/octavio/Desktop/Coding/NodeJS/Lyrics App/lyricend
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2023-06-06T06:30:22.428Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2023-06-06T06:30:23.024Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2023-06-06T06:30:23.024Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[info] i  Using project lyricend-6b31f (Lyricend) 
+[info] 
+=== Hosting Setup
+[info] 
+[info] Your public directory is the folder (relative to your project directory) that
+[info] will contain Hosting assets to be uploaded with firebase deploy. If you
+[info] have a build process for your assets, use your build's output directory.
+[info] 
+[info] ✔  Wrote public/404.html 
+[debug] [2023-06-06T06:31:22.645Z] >>> [apiv2][query] GET https://www.gstatic.com/firebasejs/releases.json [none]
+[debug] [2023-06-06T06:31:22.785Z] <<< [apiv2][status] GET https://www.gstatic.com/firebasejs/releases.json 200
+[debug] [2023-06-06T06:31:22.785Z] <<< [apiv2][body] GET https://www.gstatic.com/firebasejs/releases.json {"current":{"version":"9.22.1","browserURL":"https://www.gstatic.com/firebasejs/9.22.1/firebase.js","packageURL":"https://www.gstatic.com/firebasejs/9.22.1/firebase.tgz"},"live":{"version":"9.22","browserURL":"https://www.gstatic.com/firebasejs/live/9.22/firebase.js","packageURL":"https://www.gstatic.com/firebasejs/live/9.22/firebase.tgz"},"components":{"analytics":"https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js","app":"https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js","app-check":"https://www.gstatic.com/firebasejs/9.22.1/firebase-app-check.js","auth":"https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js","auth/cordova":"https://www.gstatic.com/firebasejs/9.22.1/firebase-auth/cordova.js","auth/react-native":"https://www.gstatic.com/firebasejs/9.22.1/firebase-auth/react-native.js","functions":"https://www.gstatic.com/firebasejs/9.22.1/firebase-functions.js","firestore":"https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js","firestore/lite":"https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore/lite.js","installations":"https://www.gstatic.com/firebasejs/9.22.1/firebase-installations.js","storage":"https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js","performance":"https://www.gstatic.com/firebasejs/9.22.1/firebase-performance.js","remote-config":"https://www.gstatic.com/firebasejs/9.22.1/firebase-remote-config.js","messaging":"https://www.gstatic.com/firebasejs/9.22.1/firebase-messaging.js","messaging/sw":"https://www.gstatic.com/firebasejs/9.22.1/firebase-messaging/sw.js","database":"https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js","firestore.memory":"https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.memory.js"}}
+[info] i  Skipping write of public/index.html 
+[info] 
+[info] i  Detected a .git folder at /Users/octavio/Desktop/Coding/NodeJS/Lyrics App/lyricend 
+[info] i  Authorizing with GitHub to upload your service account to a GitHub repository's secrets store. 
+[info] 
+[info] Visit this URL on this device to log in:
+[info] https://github.com/login/oauth/authorize?client_id=89cf50f02ac6aaed3484&state=350257642&redirect_uri=http%3A%2F%2Flocalhost%3A9005&scope=read%3Auser%20repo%20public_repo
+[info] 
+[info] Waiting for authentication...
+[debug] [2023-06-06T06:37:17.312Z] >>> HTTP REQUEST POST https://github.com/login/oauth/access_token  
+ {"client_id":"89cf50f02ac6aaed3484","client_secret":"3330d14abc895d9a74d5f17cd7a00711fa2c5bf0","code":"5b1f84d80a0f8bbc6f3d","redirect_uri":"http://localhost:9005","state":"350257642"}
+[debug] [2023-06-06T06:37:17.640Z] <<< HTTP RESPONSE 200 {"server":"GitHub.com","date":"Tue, 06 Jun 2023 06:37:17 GMT","content-type":"application/json; charset=utf-8","transfer-encoding":"chunked","vary":"X-PJAX, X-PJAX-Container, Turbo-Visit, Turbo-Frame, Accept-Encoding, Accept, X-Requested-With","etag":"W/\"c37c35c54c5b9034f8b2b5281ff5495f\"","cache-control":"max-age=0, private, must-revalidate","strict-transport-security":"max-age=31536000; includeSubdomains; preload","x-frame-options":"deny","x-content-type-options":"nosniff","x-xss-protection":"0","referrer-policy":"origin-when-cross-origin, strict-origin-when-cross-origin","content-security-policy":"default-src 'none'; base-uri 'self'; block-all-mixed-content; child-src github.com/assets-cdn/worker/ gist.github.com/assets-cdn/worker/; connect-src 'self' uploads.github.com objects-origin.githubusercontent.com www.githubstatus.com collector.github.com raw.githubusercontent.com api.github.com github-cloud.s3.amazonaws.com github-production-repository-file-5c1aeb.s3.amazonaws.com github-production-upload-manifest-file-7fdce7.s3.amazonaws.com github-production-user-asset-6210df.s3.amazonaws.com cdn.optimizely.com logx.optimizely.com/v1/events *.actions.githubusercontent.com productionresultssa0.blob.core.windows.net/ productionresultssa1.blob.core.windows.net/ productionresultssa2.blob.core.windows.net/ productionresultssa3.blob.core.windows.net/ productionresultssa4.blob.core.windows.net/ wss://*.actions.githubusercontent.com github-production-repository-image-32fea6.s3.amazonaws.com github-production-release-asset-2e65be.s3.amazonaws.com insights.github.com wss://alive.github.com; font-src github.githubassets.com; form-action 'self' github.com gist.github.com objects-origin.githubusercontent.com; frame-ancestors 'none'; frame-src viewscreen.githubusercontent.com notebooks.githubusercontent.com; img-src 'self' data: github.githubassets.com media.githubusercontent.com camo.githubusercontent.com identicons.github.com avatars.githubusercontent.com github-cloud.s3.amazonaws.com objects.githubusercontent.com objects-origin.githubusercontent.com secured-user-images.githubusercontent.com/ user-images.githubusercontent.com/ private-user-images.githubusercontent.com opengraph.githubassets.com github-production-user-asset-6210df.s3.amazonaws.com customer-stories-feed.github.com spotlights-feed.github.com *.githubusercontent.com; manifest-src 'self'; media-src github.com user-images.githubusercontent.com/ secured-user-images.githubusercontent.com/ private-user-images.githubusercontent.com; script-src github.githubassets.com; style-src 'unsafe-inline' github.githubassets.com; worker-src github.com/assets-cdn/worker/ gist.github.com/assets-cdn/worker/","x-github-request-id":"5F6D:01A7:4A6052:6B0741:647ED41D"}
+[debug] [2023-06-06T06:37:17.728Z] >>> [apiv2][query] GET https://api.github.com/user [none]
+[debug] [2023-06-06T06:37:18.013Z] <<< [apiv2][status] GET https://api.github.com/user 200
+[debug] [2023-06-06T06:37:18.013Z] <<< [apiv2][body] GET https://api.github.com/user {"login":"OkiMusix05","id":135690628,"node_id":"U_kgDOCBZ5hA","avatar_url":"https://avatars.githubusercontent.com/u/135690628?v=4","gravatar_id":"","url":"https://api.github.com/users/OkiMusix05","html_url":"https://github.com/OkiMusix05","followers_url":"https://api.github.com/users/OkiMusix05/followers","following_url":"https://api.github.com/users/OkiMusix05/following{/other_user}","gists_url":"https://api.github.com/users/OkiMusix05/gists{/gist_id}","starred_url":"https://api.github.com/users/OkiMusix05/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/OkiMusix05/subscriptions","organizations_url":"https://api.github.com/users/OkiMusix05/orgs","repos_url":"https://api.github.com/users/OkiMusix05/repos","events_url":"https://api.github.com/users/OkiMusix05/events{/privacy}","received_events_url":"https://api.github.com/users/OkiMusix05/received_events","type":"User","site_admin":false,"name":null,"company":null,"blog":"","location":null,"email":null,"hireable":null,"bio":null,"twitter_username":null,"public_repos":0,"public_gists":0,"followers":0,"following":0,"created_at":"2023-06-06T06:36:04Z","updated_at":"2023-06-06T06:36:04Z","private_gists":0,"total_private_repos":0,"owned_private_repos":0,"disk_usage":0,"collaborators":0,"two_factor_authentication":false,"plan":{"name":"free","space":976562499,"collaborators":0,"private_repos":10000}}
+[info] 
+[info] ✔  Success! Logged into GitHub as OkiMusix05 
+[info] 
