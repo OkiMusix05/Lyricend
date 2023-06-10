@@ -83,7 +83,6 @@ export function PasswordProgress({ pwdValue, setPwdValue }) {
                             value={value}
                             onChange={(event) => {
                                 setValue(event.currentTarget.value);
-                                console.log(value)
                             }}
                         />
                     </div>

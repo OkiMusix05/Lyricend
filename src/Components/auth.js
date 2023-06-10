@@ -3,7 +3,7 @@ import { useToggle, upperFirst } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 import { IconBrandGoogle, IconBrandTwitter } from '@tabler/icons-react';
 import { auth, googleProvider, twitterProvider } from '../config/firebase'
-import { createUserWithEmailAndPassword, signInWithPopup, TwitterAuthProvider, onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword, signInWithPopup, TwitterAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, updateProfile } from 'firebase/auth'
 import {
     TextInput,
     PasswordInput,
@@ -95,21 +95,65 @@ export function AuthenticationForm(props) {
     //Regular email sign-in
     const signIn = async (values) => {
         try {
-            await createUserWithEmailAndPassword(auth, values['email'], pwdValue)
-            await succsesfullySignedIn();
+            await createUserWithEmailAndPassword(auth, values['email'], pwdValue).then(() => updateProfile(auth.currentUser, { displayName: values['name'] }));
+            succsesfullySignedIn();
             //console.log("Password: " + pwdValue)
         } catch (error) {
             switch (error.code) {
                 case 'auth/email-already-in-use':
-                    await signInWithEmailAndPassword(auth, values['email'], pwdValue)
-                    //console.log("Log In")
-                    //console.log("Password: " + values['pwd'])
-                    break;
-                case 'auth/wrong-password':
-                    //console.log("INCORRECT PASSWORD")
-                    form.setFieldError('pwd', 'Incorrect Password')
+                    try {
+                        await signInWithEmailAndPassword(auth, values['email'], pwdValue);
+                    } catch (error) {
+                        switch (error.code) {
+                            case 'auth/wrong-password':
+                                form.setFieldError('pwd', 'Incorrect Password');
+                                notifications.show({
+                                    title: 'Incorrect Password',
+                                    message: 'Try again',
+                                    styles: (theme) => ({
+                                        root: {
+                                            backgroundColor: theme.colors.white,
+                                            borderColor: theme.colors.red,
+
+                                            '&::before': { backgroundColor: theme.colors.pink[6] },
+                                        },
+                                    }),
+                                });
+                                break;
+                            case 'auth/too-many-requests':
+                                notifications.show({
+                                    title: 'ACCESS BLOCKED TEMPORARILY',
+                                    message: 'Too many requests, try again later...',
+                                    styles: (theme) => ({
+                                        root: {
+                                            backgroundColor: theme.colors.white,
+                                            borderColor: theme.colors.red,
+
+                                            '&::before': { backgroundColor: theme.colors.pink[6] },
+                                        },
+                                    }),
+                                });
+                                break;
+                            default:
+                                throw error;
+                                break;
+                        }
+                    }
                     break;
                 default:
+                    notifications.show({
+                        title: 'Unkown Error',
+                        message: 'Try again later',
+                        styles: (theme) => ({
+                            root: {
+                                backgroundColor: theme.colors.white,
+                                borderColor: theme.colors.red,
+
+                                '&::before': { backgroundColor: theme.colors.pink[6] },
+                            },
+                        }),
+                    });
+                    //throw error;
                     break;
             }
         }
@@ -137,7 +181,7 @@ export function AuthenticationForm(props) {
         return () => {
             authStateListener();
         };
-    }, [AUopened, close, form, open, toggle]);
+    }, [AUopened, close, open]);
     return (
         <Modal opened={AUopened} onClose={close} withCloseButton={false} trapFocus closeOnEscape={false} closeOnClickOutside={false} overlayProps={{
             opacity: 0.55,
@@ -191,7 +235,6 @@ export function AuthenticationForm(props) {
                                 onChange={(event) => {
                                     form.setFieldValue('pwd', event.currentTarget.value);
                                     setPwdValue(event.currentTarget.value);
-                                    //console.log(pwdValue)
                                 }}
                                 error={form.errors.pwd}
                                 radius="md"
@@ -211,7 +254,9 @@ export function AuthenticationForm(props) {
                                 component="button"
                                 type="button"
                                 color="dimmed"
-                                onClick={() => toggle()}
+                                onClick={(event) => {
+                                    toggle();
+                                }}
                                 size="xs"
                             >
                                 {type === 'register'

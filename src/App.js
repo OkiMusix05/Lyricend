@@ -1,7 +1,8 @@
 import React from 'react';
-import { useState, useRef, useEffect, createContext } from 'react';
-import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, rem } from '@mantine/core';
+import { useState, useRef, useEffect, createContext, useContext } from 'react';
+import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, rem, useMantineTheme } from '@mantine/core';
 import { UserPanel } from './Components/_user.tsx';
+import { SearchSongInput } from './Components/_songSearch.tsx';
 import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff } from '@tabler/icons-react';
 import { RichTextEditor } from '@mantine/tiptap';
 import { useEditor, BubbleMenu } from '@tiptap/react';
@@ -19,35 +20,34 @@ import {
   Text,
   Title,
   Grid,
-  List,
   Loader,
   ActionIcon,
   Tooltip,
   Button,
-  TextInput,
-  Textarea
+  Textarea,
 } from '@mantine/core';
-import { Auth, AuthenticationForm } from "./Components/auth.js"
+import { AuthenticationForm } from "./Components/auth.js"
 import { auth, db } from './config/firebase'
 import { onAuthStateChanged } from "firebase/auth";
-import { getDocs, collection, addDoc, setDoc, deleteDoc, doc, query, where } from 'firebase/firestore'
+import { getDocs, collection, setDoc, deleteDoc, doc, query, where } from 'firebase/firestore'
 import { UnstyledButton } from '@mantine/core';
 //import songs from `${process.env.PUBLIC_URL}/songs.json`;
 
 import './App.css';
-import { isEditable } from '@testing-library/user-event/dist/utils/index.js';
+//import { isEditable } from '@testing-library/user-event/dist/utils/index.js';
 
 //const mql = window.matchMedia(`(min-width: 800px)`);
 //Context
-export const isSavedCtx = createContext({})
+export const isSavedCtx = createContext({});
+export const songListCtx = createContext({});
 
-const API_KEY = '/1gJtFMabYLBlll1mYo+Og==m9WXbzQarLTMvbLI';
+//const API_KEY = '/1gJtFMabYLBlll1mYo+Og==m9WXbzQarLTMvbLI';
 let numOfRhymes = 8;
 
 export default function App() {
   return (
     <ColorSchemeProvider>
-      <MantineProvider>
+      <MantineProvider theme={{ focusRing: 'auto', colorScheme: 'dark', primaryColor: 'blue', }}>
         <Notifications limit={2} />
         <ModalsProvider>
           <MainApp />
@@ -58,7 +58,16 @@ export default function App() {
 }
 function MainApp() {
   //App Theme
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const [firstColor, setFirstColor] = useState('');
+  const theme = useMantineTheme();
+  useEffect(() => {
+    if (theme.colorScheme === 'light') {
+      setFirstColor('dark.9');
+    } else if (theme.colorScheme === 'dark') {
+      setFirstColor('dark.0');
+    }
+  }, [theme]);
+  //const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const [opened, setOpened] = useState(false);
   //For the Rhyming Functionality
   const [words, setWords] = useState([]);
@@ -70,61 +79,24 @@ function MainApp() {
   //Accordion Control
   const [accValue, setAccValue] = useState("");
 
-  //Fetch Rhyming Words Function - Switched to the Datamuse API instead of the one from API Ninjas
-  const fetchWords = async (newText) => {
-    setIsLoading(true);
-    try {
-      const lines = newText.split('\n');
+  //Filter Songs:
+  const [searchSongFilter, setSearchSongFilter] = useState('');
+
+  //Master Rhyme Function - There used to be 2 functions but now it's just one with the common logic
+  const rhymeF = async (word, where) => {
+    let look;
+    if (where === 'update') {
+      const lines = word.split('\n');
       const currentLine = lines[lines.length - 1].trim().split(' ');
-
-      const perfectRhymeUrl = currentLine.length > 0
-        ? `https://api.datamuse.com/words?rel_rhy=${currentLine[currentLine.length - 1]}`
-        : null;
-      const nearRhymeUrl = currentLine.length > 0
-        ? `https://api.datamuse.com/words?rel_nry=${currentLine[currentLine.length - 1]}`
-        : null;
-
-      const [response1, response2] = await Promise.all([
-        perfectRhymeUrl ? fetch(perfectRhymeUrl) : null,
-        nearRhymeUrl ? fetch(nearRhymeUrl) : null
-      ]);
-
-      if ((!response1 || !response1.ok) && (!response2 || !response2.ok)) {
-        throw new Error('Request failed');
-      }
-
-      const responseJson1 = response1 ? await response1.json() : [];
-      const responseJson2 = response2 ? await response2.json() : [];
-
-      const perfectRhymeWords = responseJson1.length > 0
-        ? responseJson1
-          .sort((a, b) => b.score - a.score)
-          .map(({ word }) => word)
-          .slice(0, numOfRhymes)
-        : ['None Found'];
-
-      const nearRhymeWords = responseJson2.length > 0
-        ? responseJson2.map(({ word }) => word).slice(0, numOfRhymes)
-        : ['None Found'];
-
-      setRhymes({
-        perfectRhyme: perfectRhymeWords,
-        nearRhyme: nearRhymeWords
-      });
-    } catch (error) {
-      console.error('Error:', error);
-      setRhymes({ perfectRhyme: ['None found'], nearRhyme: ['None found'] });
-    } finally {
-      setIsLoading(false);
+      look = currentLine[currentLine.length - 1].replace(/[.,!?]+$/, '');;
     }
-  };
-  //Rhyme for just one word
-  async function OneRhymeF() {
+    else if (where === 'select') {
+      look = word.replace(/[.,!?]+$/, '');
+    }
     setIsLoading(true);
     try {
-      const selection = window.getSelection().toString().trim().split(" ").pop();
-      const perfectRhymeUrl = `https://api.datamuse.com/words?rel_rhy=${selection}`;
-      const nearRhymeUrl = `https://api.datamuse.com/words?rel_nry=${selection}`;
+      const perfectRhymeUrl = `https://api.datamuse.com/words?rel_rhy=${look}`;
+      const nearRhymeUrl = `https://api.datamuse.com/words?rel_nry=${look}`;
 
       const [response1, response2] = await Promise.all([
         fetch(perfectRhymeUrl),
@@ -146,8 +118,11 @@ function MainApp() {
         : ['None Found'];
 
       const nearRhymeWords = responseJson2.length > 0
-        ? responseJson2.map(({ word }) => word).slice(0, numOfRhymes)
-        : ['N/A'];
+        ? responseJson2
+          .sort((a, b) => b.score - a.score)
+          .map(({ word }) => word)
+          .slice(0, numOfRhymes)
+        : ['None Found'];
 
       setRhymes({
         perfectRhyme: perfectRhymeWords,
@@ -158,12 +133,14 @@ function MainApp() {
       setRhymes({ perfectRhyme: ['None found'], nearRhyme: ['None found'] });
     } finally {
       setIsLoading(false);
-      setAccValue('ryms')
+      if (where === 'select') {
+        setAccValue('ryms');
+      }
     }
-  }
+  };
   //Means-Like Function: Essentialy a reverse dictionary
   const [searchWord, setSearchWord] = useState('');
-  const [searchedRhymes, setSearchedRhymes] = useState([]);
+  const [meansLikeWords, setMeansLikeWords] = useState([]);
   const [isSearchButtonClicked, setIsSearchButtonClicked] = useState(false);
   const wordFind = async () => {
     setIsSearchButtonClicked(true);
@@ -181,10 +158,10 @@ function MainApp() {
           .map(({ word }) => word)
           .slice(0, numOfRhymes)
         : ['None Found'];
-      setSearchedRhymes(searchedWords);
+      setMeansLikeWords(searchedWords);
     } catch (error) {
       console.error('Error:', error);
-      setSearchedRhymes(['None found']);
+      setMeansLikeWords(['None found']);
     } finally {
       setIsLoading(false);
     }
@@ -194,8 +171,9 @@ function MainApp() {
   const [synonyms, setSynonyms] = useState([])
   async function SynF(word) {
     setIsLoading(true);
+    setSelectedWord(word.trim().split(" ").pop().replace(/[.,!?]+$/, ''));
     try {
-      const synonymUrl = `https://api.datamuse.com/words?rel_syn=${word}`;
+      const synonymUrl = `https://api.datamuse.com/words?rel_syn=${word.replace(/[.,!?]+$/, '')}`;
 
       const response = await fetch(synonymUrl);
 
@@ -224,8 +202,9 @@ function MainApp() {
   const [selectedWord, setSelectedWord] = useState('');
   async function DefineF(word) {
     setIsLoading(true);
+    setSelectedWord(word.trim().split(" ").pop().replace(/[.,!?]+$/, ''));
     try {
-      const definitionUrl = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.trim().split(" ").pop())}`;
+      const definitionUrl = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.trim().split(" ").pop().replace(/[.,!?]+$/, ''))}`;
 
       const response = await fetch(definitionUrl);
 
@@ -238,10 +217,9 @@ function MainApp() {
       const definitions = responseJson?.meanings?.[0]?.definitions || ['None Found'];
 
       setDefState(definitions);
-      setSelectedWord(word.trim().split(" ").pop());
     } catch (error) {
       console.error('Error:', error);
-      setDefState(['None found']);
+      setDefState(['None Found']);
     } finally {
       setIsLoading(false);
       setAccValue('def')
@@ -256,14 +234,8 @@ function MainApp() {
       if (user) {
         setIsSigned(true);
         setUID(user.uid);
-        /*console.log("User is Signed in")
-        editor?.commands?.clearContent();*/
-        handleSave();
       } else {
         setIsSigned(false)
-        /*console.log("User is NOT Signed in")
-        editor?.commands?.clearContent();
-        handleSave();*/
       }
     });        // Clean up the listener when the component unmounts
     return () => {
@@ -271,7 +243,7 @@ function MainApp() {
     };
   }, []);
   useEffect(() => {
-    if (isSigned == true) {
+    if (isSigned === true) {
       getSongList();
       setEditable(true);
     }
@@ -310,7 +282,7 @@ function MainApp() {
     const value = lines?.slice(1).join('\n').trim();
     /*await addDoc(lyricsCollectionRef, { title: newSongTitle, lyrics: newSongLyrics })*/
     const id = uid + "-" + key
-    if (key != '') {
+    if (key !== '') {
       try {
         await setDoc(doc(db, "Lyrics", id), {
           title: key,
@@ -318,9 +290,9 @@ function MainApp() {
           _uid: uid,
           _sid: id,
         });
-        setIsSaved(true)
+        setIsSaved(true);
+        handleOpen(uid, key, value);
         getSongList();
-        handleOpen(uid, key, value)
         notifications.show({
           title: '"' + key + '" was succesfully saved!',
           message: 'Well done with this one!',
@@ -354,7 +326,7 @@ function MainApp() {
 
   //OpenFile
   const handleOpen = (uid, title, lyrics) => {
-    if (editor.isEditable == true) {
+    if (editor.isEditable === true) {
       editor.commands.setContent('<h2>' + title + '</h2>');
       editor.commands.enter();
       let lys = '<p>' + lyrics.replaceAll("\\n", '</p><p>') + '</p>';
@@ -371,7 +343,8 @@ function MainApp() {
             '&::before': { backgroundColor: theme.colors.teal[6] },
           },
         }),
-      })
+      });
+      setSearchSongFilter('');
     } else {
       notifications.show({
         title: 'Editor is Locked',
@@ -412,16 +385,16 @@ function MainApp() {
     });
 
   //Clear something idk, this function was made by ChatGPT and it works so i leave it
-  const handleClear = () => {
+  /*const handleClear = () => {
     setText('');
     setWords([]);
     setRhymes({ currentLine: [], previousLine: [] });
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
-  }
+  }*/
   //For the accordion
-  //const [value, setValue] = useState < string | null > (null);
+  //const [value, setValue] = useState <Mant string | null > (null);
   const [editable, setEditable] = useState(true);
   const editor = useEditor({
     editable,
@@ -435,13 +408,15 @@ function MainApp() {
       let html = editor.getHTML()
       let apiText = html.replaceAll('</p><p>', '\n').replace('<p>', '').replace('</p>', '')
       // send the content to an API here
-      if (apiText != '') {
+      if (apiText !== '') {
         if (timerRef.current) {
           clearTimeout(timerRef.current);
         }
 
         timerRef.current = setTimeout(() => {
-          fetchWords(apiText);
+          if (accValue === 'ryms') {
+            rhymeF(apiText, 'update');
+          }
         }, 1500);
       }
     },
@@ -461,12 +436,13 @@ function MainApp() {
 
   const editToggle = () => {
     //console.log(editor.isEditable)
-    if (editor.isEditable == true) {
+    if (editor.isEditable === true) {
       setEditable(false);
-    } else if (editor.isEditable == false) {
+    } else if (editor.isEditable === false) {
       setEditable(true);
     }
   }
+
   return (
     <AppShell
       padding="md"
@@ -475,7 +451,7 @@ function MainApp() {
       header={
         <Header height={60}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Title order={1} ta="center">Lyricend</Title>
+            <Title order={1} ta="center" color={firstColor}>Lyricend</Title>
           </div>
         </Header>
       }
@@ -492,8 +468,8 @@ function MainApp() {
               })}
             >
               <Group position="apart">
-                <Title order={3}>Projects</Title>
-                <Tooltip label="Save" color="blue" withArrow position="bottom" openDelay={1000}>
+                <Title order={3} color={firstColor}>Projects</Title>
+                <Tooltip label="Save" color='blue' withArrow position="bottom" openDelay={1000}>
                   <ActionIcon variant="default" onClick={() => handleSave()} size={30}>
                     {isSaved === true ? <IconFileCheck size="1rem" color="teal" /> : <IconFile size="1rem" />}
                   </ActionIcon>
@@ -521,7 +497,7 @@ function MainApp() {
                     },
                   })} onClick={() => {
                     let currentTitle = editor?.getHTML()?.replaceAll('</p><p>', '\n')?.replace('<p>', '')?.replace('</p>', '')?.replaceAll('<h2>', '')?.replaceAll('</h2>', '\n').split('\n')[0].trim();
-                    if (isSaved || editor.getText() == '') {
+                    if (isSaved || editor.getText() === '') {
                       handleOpen(song._uid, song.title, song.lyrics)
                     } else {
                       modals.openConfirmModal({
@@ -567,7 +543,8 @@ function MainApp() {
                       <Text size="sm">{song.title}</Text>
                     </Group>
                     <ActionIcon
-                      variant="default"
+                      variant="subtle"
+                      color={firstColor}
                       onClick={(event) => {
                         event.stopPropagation();
                         if (editor.isEditable) {
@@ -593,7 +570,7 @@ function MainApp() {
                       className="deleteIcon"
                     >
                       <Center>
-                        {editor.isEditable === true ? <IconTrash size="1rem" /> : <IconTrashOff size="1rem" color='gray' />}
+                        {editor.isEditable === true ? <IconTrash size="1rem" color='black' /> : <IconTrashOff size="1rem" color='gray' />}
                       </Center>
                     </ActionIcon>
                   </Group>
@@ -602,6 +579,9 @@ function MainApp() {
             </Box>
           </Navbar.Section>
           <Navbar.Section>
+            <songListCtx.Provider value={{ songList, setSongList, getSongList, searchSongFilter, setSearchSongFilter }}>
+              <SearchSongInput />
+            </songListCtx.Provider>
             <isSavedCtx.Provider value={{ isSaved, setIsSaved, editor }}>
               <UserPanel />
             </isSavedCtx.Provider>
@@ -623,7 +603,7 @@ function MainApp() {
               })}
             >
               <Group position="apart">
-                <Title order={3}>Tools {isLoading && <Loader color="pink" variant="dots" size="sm" />}{' '}</Title>
+                <Title order={3} color={firstColor}>Tools {isLoading && <Loader color="pink" variant="dots" size="sm" />}{' '}</Title>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <Tooltip label="Lock/Unlock" color="blue" withArrow position="bottom" openDelay={1000}>
                     <ActionIcon
@@ -639,7 +619,15 @@ function MainApp() {
                       )}
                     </ActionIcon>
                   </Tooltip>
-                  <ActionIcon variant="default" /* onClick={} */ size={30}>
+                  <ActionIcon variant="default" onClick={() => {
+                    if (theme.colorScheme === 'light') {
+                      theme.colorScheme = 'dark';
+                      setFirstColor('dark.0');
+                    } else {
+                      theme.colorScheme = 'light';
+                      setFirstColor('dark.9');
+                    }
+                  }} size={30}>
                     <IconSettings size="1rem" />
                   </ActionIcon>
                 </div>
@@ -652,31 +640,45 @@ function MainApp() {
               <Accordion variant="separated" radius="md" multiple={false} value={accValue} onChange={setAccValue}>
                 <Accordion.Item value="ryms">
                   <Accordion.Control>
-                    <Text>
-                      Rhymes
-                    </Text>
+                    <Text>Rhymes</Text>
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Grid>
                       <Grid.Col span={6}>
-                        <Text fw={600}>Perfect</Text>
+                        <Text fw={600} color={firstColor}>Perfect</Text>
                       </Grid.Col>
                       <Grid.Col span={6}>
-                        <Text fw={600}>Similar</Text>
+                        <Text fw={600} color={firstColor}>Similar</Text>
                       </Grid.Col>
                     </Grid>
                     {rhymes.perfectRhyme.map((word, index) => (
                       <Grid key={index}>
                         <Grid.Col span={6}>
-                          <button
-                            type="button"
-                            onClick={() => DefineF(word)}
-                            style={{ border: 'none', background: 'none', cursor: 'pointer' }}
-                          >
-                            {word}
-                          </button>
+                          {word === 'None Found' ? (
+                            <Text color={firstColor}>{word}</Text>
+                          ) : (
+                            <UnstyledButton
+                              type="button"
+                              onClick={() => DefineF(word)}
+                              style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                            >
+                              {word}
+                            </UnstyledButton>
+                          )}
                         </Grid.Col>
-                        <Grid.Col span={6}>{rhymes.nearRhyme[index]}</Grid.Col>
+                        <Grid.Col span={6}>
+                          {rhymes.nearRhyme[index] === 'None Found' ? (
+                            <Text color={firstColor}>{rhymes.nearRhyme[index]}</Text>
+                          ) : (
+                            <UnstyledButton
+                              type="button"
+                              onClick={() => DefineF(rhymes.nearRhyme[index])}
+                              style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                            >
+                              {rhymes.nearRhyme[index]}
+                            </UnstyledButton>
+                          )}
+                        </Grid.Col>
                       </Grid>
                     ))}
                   </Accordion.Panel>
@@ -705,27 +707,30 @@ function MainApp() {
                         </Button>
                       </Grid.Col>
                     </Grid>
-                    {searchedRhymes.length > 0 ? (
-                      <ul style={{ paddingLeft: '1.5rem' }}>
-                        {searchedRhymes.map((word, index) => (
-                          <li key={index}>
-                            <button
-                              type="button"
-                              onClick={() => DefineF(word)}
-                              style={{ border: 'none', background: 'none', cursor: 'pointer' }}
-                            >
-                              {word}
-                            </button>
+                    {meansLikeWords.length > 0 ? (
+                      <ul style={{ paddingLeft: '1.5rem', color: firstColor }}>
+                        {meansLikeWords.slice(0, numOfRhymes).map((word, index) => (
+                          <li key={index} style={{ color: firstColor }}>
+                            {word === 'None Found' ? (
+                              <Text color={firstColor}>{word}</Text>
+                            ) : (
+                              <UnstyledButton
+                                type="button"
+                                onClick={() => DefineF(word)}
+                                style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                              >
+                                {word}
+                              </UnstyledButton>
+                            )}
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      searchedRhymes.length === 0 &&
-                      isSearchButtonClicked &&
-                      !isLoading && <Text>No words found</Text>
+                      meansLikeWords.length === 0 && isSearchButtonClicked && !isLoading && <Text color={firstColor}>No words found</Text>
                     )}
                   </Accordion.Panel>
                 </Accordion.Item>
+
 
                 <Accordion.Item value="def">
                   <Accordion.Control>
@@ -733,15 +738,26 @@ function MainApp() {
                   </Accordion.Control>
                   <Accordion.Panel>
                     {defList.length === 0 ? (
-                      <Text>Select the word you want to define from the editor or click on a rhyme or word from the Tools section to see its definition</Text>
+                      <Text color={firstColor}>Select the word you want to define from the editor or click on a rhyme or word from the Tools section to see its definition</Text>
                     ) : (
                       <>
-                        <Text fw={600}>{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
-                        <ul style={{ paddingLeft: '1.5rem' }}>
-                          {defList.slice(0, Math.floor(numOfRhymes / 2)).map((definition, index) => (
-                            <li key={index}>{definition.definition}</li>
-                          ))}
-                        </ul>
+                        {defList[0] === 'None Found' ? (
+                          <>
+                            <Text fw={600} color={firstColor}>{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
+                            <ul style={{ paddingLeft: '1.5rem' }}>
+                              <li color={firstColor}>None Found</li>
+                            </ul>
+                          </>
+                        ) : (
+                          <>
+                            <Text fw={600} color={firstColor}>{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
+                            <ul style={{ paddingLeft: '1.5rem', color: firstColor }}>
+                              {defList.slice(0, Math.floor(numOfRhymes / 2)).map((definition, index) => (
+                                <li key={index} color={firstColor}><Text color={firstColor}>{definition.definition}</Text></li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
                       </>
                     )}
                   </Accordion.Panel>
@@ -753,24 +769,32 @@ function MainApp() {
                   </Accordion.Control>
                   <Accordion.Panel>
                     {synonyms.length > 0 ? (
-                      <ul style={{ paddingLeft: '1.5rem' }}>
-                        {synonyms.map((synonym, index) => (
-                          <li key={index}>
-                            <button
-                              type="button"
-                              onClick={() => DefineF(synonym)}
-                              style={{ border: 'none', background: 'none', cursor: 'pointer' }}
-                            >
-                              {synonym}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
+                      <>
+                        <Text fw={600} color={firstColor}>{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
+                        <ul style={{ paddingLeft: '1.5rem' }}>
+                          {synonyms.slice(0, numOfRhymes).map((synonym, index) => (
+                            <li key={index}>
+                              {synonym === 'None Found' ? (
+                                <Text color={firstColor}>{synonym}</Text>
+                              ) : (
+                                <UnstyledButton
+                                  type="button"
+                                  onClick={() => DefineF(synonym)}
+                                  style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                                >
+                                  {synonym}
+                                </UnstyledButton>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
                     ) : (
-                      <Text>Select a word from the editor to search for synonyms</Text>
+                      <Text color={firstColor}>Select a word from the editor to search for synonyms</Text>
                     )}
                   </Accordion.Panel>
                 </Accordion.Item>
+
               </Accordion>
             </Box>
           </Navbar.Section>
@@ -787,7 +811,7 @@ function MainApp() {
           <RichTextEditor editor={editor} style={{ width: "100%" }}>
             {editor && (
               <BubbleMenu editor={editor} style={{ display: 'flex' }}>
-                <Button color="pink" variant="light" compact onClick={OneRhymeF} style={{ marginRight: '0.3rem' }}>
+                <Button color="pink" variant="light" compact onClick={() => rhymeF(window.getSelection().toString().trim().split(' ').pop(), 'select')} style={{ marginRight: '0.3rem' }}>
                   Rhymes
                 </Button>
                 <Button color="pink" variant="light" compact onClick={() => SynF(window.getSelection().toString().trim().split(' ').pop())} style={{ marginRight: '0.3rem' }}>
