@@ -1,9 +1,10 @@
 import React from 'react';
 import { useState, useRef, useEffect, createContext, useContext } from 'react';
 import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, rem, useMantineTheme } from '@mantine/core';
+import { useLocalStorage, useHotkeys, useColorScheme } from '@mantine/hooks';
 import { UserPanel } from './Components/_user.tsx';
 import { SearchSongInput } from './Components/_songSearch.tsx';
-import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff } from '@tabler/icons-react';
+import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars } from '@tabler/icons-react';
 import { RichTextEditor } from '@mantine/tiptap';
 import { useEditor, BubbleMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -45,28 +46,29 @@ export const songListCtx = createContext({});
 let numOfRhymes = 8;
 
 export default function App() {
+  const [colorScheme, setColorScheme] = useLocalStorage('mantine-color-scheme', 'light');
+
+  const toggleColorScheme = (value) =>
+    setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
+
+  useHotkeys([['mod+J', () => toggleColorScheme()]]);
   return (
-    <ColorSchemeProvider>
-      <MantineProvider theme={{ focusRing: 'auto', colorScheme: 'dark', primaryColor: 'blue', }}>
-        <Notifications limit={2} />
-        <ModalsProvider>
-          <MainApp />
-        </ModalsProvider>
-      </MantineProvider>
-    </ColorSchemeProvider>
+    <>
+      <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
+        <MantineProvider theme={{ colorScheme }} withGlobalStyles withNormalizeCSS>
+          <Notifications limit={2} />
+          <ModalsProvider>
+            <MainApp />
+          </ModalsProvider>
+        </MantineProvider>
+      </ColorSchemeProvider>
+    </>
   );
 }
 function MainApp() {
   //App Theme
-  const [firstColor, setFirstColor] = useState('');
-  const theme = useMantineTheme();
-  useEffect(() => {
-    if (theme.colorScheme === 'light') {
-      setFirstColor('dark.9');
-    } else if (theme.colorScheme === 'dark') {
-      setFirstColor('dark.0');
-    }
-  }, [theme]);
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const dark = colorScheme === 'dark';
   //const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const [opened, setOpened] = useState(false);
   //For the Rhyming Functionality
@@ -252,22 +254,23 @@ function MainApp() {
       editor?.commands.setContent('');
       setEditable(false);
     }
+    console.log("Changed isSigned")
   }, [isSigned])
 
   //FireStore Data Base
   const [songList, setSongList] = useState([]);
-  const lyricsCollectionRef = collection(db, "Lyrics")
+  const lyricsCollectionRef = collection(db, "Lyrics");
 
   //For getting the list and displaying all of the songs the user has made
   const getSongList = async () => {
     //READ THE DATA
     //SET LIST
     try {
-      const userSongs = query(lyricsCollectionRef, where("_uid", "==", uid))
-      const data = await getDocs(userSongs)
-      const filteredData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
-
-      setSongList(filteredData)
+      const userSongs = query(lyricsCollectionRef, where("_uid", "==", uid));
+      const data = await getDocs(userSongs);
+      const filteredData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+      setSongList(filteredData);
+      console.log("getSongList()");
     } catch (error) {
       console.error(error);
     }
@@ -280,7 +283,6 @@ function MainApp() {
     const lines = text.split('\n');
     const key = lines[0]?.trim();
     const value = lines?.slice(1).join('\n').trim();
-    /*await addDoc(lyricsCollectionRef, { title: newSongTitle, lyrics: newSongLyrics })*/
     const id = uid + "-" + key
     if (key !== '') {
       try {
@@ -290,6 +292,7 @@ function MainApp() {
           _uid: uid,
           _sid: id,
         });
+        console.log("read")
         setIsSaved(true);
         handleOpen(uid, key, value);
         getSongList();
@@ -319,9 +322,6 @@ function MainApp() {
         })
       }
     }
-    else {
-      getSongList();
-    }
   };
 
   //OpenFile
@@ -345,6 +345,7 @@ function MainApp() {
         }),
       });
       setSearchSongFilter('');
+      getSongList();
     } else {
       notifications.show({
         title: 'Editor is Locked',
@@ -451,7 +452,7 @@ function MainApp() {
       header={
         <Header height={60}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Title order={1} ta="center" color={firstColor}>Lyricend</Title>
+            <Title order={1} ta="center">Lyricend</Title>
           </div>
         </Header>
       }
@@ -468,7 +469,7 @@ function MainApp() {
               })}
             >
               <Group position="apart">
-                <Title order={3} color={firstColor}>Projects</Title>
+                <Title order={3}>Projects</Title>
                 <Tooltip label="Save" color='blue' withArrow position="bottom" openDelay={1000}>
                   <ActionIcon variant="default" onClick={() => handleSave()} size={30}>
                     {isSaved === true ? <IconFileCheck size="1rem" color="teal" /> : <IconFile size="1rem" />}
@@ -544,7 +545,6 @@ function MainApp() {
                     </Group>
                     <ActionIcon
                       variant="subtle"
-                      color={firstColor}
                       onClick={(event) => {
                         event.stopPropagation();
                         if (editor.isEditable) {
@@ -570,7 +570,11 @@ function MainApp() {
                       className="deleteIcon"
                     >
                       <Center>
-                        {editor.isEditable === true ? <IconTrash size="1rem" color='black' /> : <IconTrashOff size="1rem" color='gray' />}
+                        {editor.isEditable === true ? (
+                          <IconTrash size="1rem" />
+                        ) : (
+                          <IconTrashOff size="1rem" color="gray" />
+                        )}
                       </Center>
                     </ActionIcon>
                   </Group>
@@ -603,9 +607,9 @@ function MainApp() {
               })}
             >
               <Group position="apart">
-                <Title order={3} color={firstColor}>Tools {isLoading && <Loader color="pink" variant="dots" size="sm" />}{' '}</Title>
+                <Title order={3} >Tools {isLoading && <Loader color="pink" variant="dots" size="sm" />}{' '}</Title>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <Tooltip label="Lock/Unlock" color="blue" withArrow position="bottom" openDelay={1000}>
+                  <Tooltip label={editor.isEditable ? 'Lock' : 'Unlock'} color="blue" withArrow position="bottom" openDelay={1000}>
                     <ActionIcon
                       variant="default"
                       onClick={editToggle}
@@ -619,17 +623,16 @@ function MainApp() {
                       )}
                     </ActionIcon>
                   </Tooltip>
-                  <ActionIcon variant="default" onClick={() => {
-                    if (theme.colorScheme === 'light') {
-                      theme.colorScheme = 'dark';
-                      setFirstColor('dark.0');
-                    } else {
-                      theme.colorScheme = 'light';
-                      setFirstColor('dark.9');
-                    }
-                  }} size={30}>
-                    <IconSettings size="1rem" />
-                  </ActionIcon>
+                  <Tooltip label={dark ? 'Light Mode' : 'Dark Mode'} color="blue" withArrow position="bottom" openDelay={1000}>
+                    <ActionIcon
+                      variant="default"
+                      color={dark ? 'yellow' : 'blue'}
+                      onClick={() => toggleColorScheme()}
+                      title="Toggle color scheme"
+                    >
+                      {dark ? <IconSun size="1.1rem" /> : <IconMoonStars size="1.1rem" />}
+                    </ActionIcon>
+                  </Tooltip>
                 </div>
               </Group>
             </Box>
@@ -645,17 +648,17 @@ function MainApp() {
                   <Accordion.Panel>
                     <Grid>
                       <Grid.Col span={6}>
-                        <Text fw={600} color={firstColor}>Perfect</Text>
+                        <Text fw={600} >Perfect</Text>
                       </Grid.Col>
                       <Grid.Col span={6}>
-                        <Text fw={600} color={firstColor}>Similar</Text>
+                        <Text fw={600} >Similar</Text>
                       </Grid.Col>
                     </Grid>
                     {rhymes.perfectRhyme.map((word, index) => (
                       <Grid key={index}>
                         <Grid.Col span={6}>
                           {word === 'None Found' ? (
-                            <Text color={firstColor}>{word}</Text>
+                            <Text >{word}</Text>
                           ) : (
                             <UnstyledButton
                               type="button"
@@ -668,7 +671,7 @@ function MainApp() {
                         </Grid.Col>
                         <Grid.Col span={6}>
                           {rhymes.nearRhyme[index] === 'None Found' ? (
-                            <Text color={firstColor}>{rhymes.nearRhyme[index]}</Text>
+                            <Text >{rhymes.nearRhyme[index]}</Text>
                           ) : (
                             <UnstyledButton
                               type="button"
@@ -708,11 +711,11 @@ function MainApp() {
                       </Grid.Col>
                     </Grid>
                     {meansLikeWords.length > 0 ? (
-                      <ul style={{ paddingLeft: '1.5rem', color: firstColor }}>
+                      <ul style={{ paddingLeft: '1.5rem' }}>
                         {meansLikeWords.slice(0, numOfRhymes).map((word, index) => (
-                          <li key={index} style={{ color: firstColor }}>
+                          <li key={index} >
                             {word === 'None Found' ? (
-                              <Text color={firstColor}>{word}</Text>
+                              <Text >{word}</Text>
                             ) : (
                               <UnstyledButton
                                 type="button"
@@ -726,7 +729,7 @@ function MainApp() {
                         ))}
                       </ul>
                     ) : (
-                      meansLikeWords.length === 0 && isSearchButtonClicked && !isLoading && <Text color={firstColor}>No words found</Text>
+                      meansLikeWords.length === 0 && isSearchButtonClicked && !isLoading && <Text >No words found</Text>
                     )}
                   </Accordion.Panel>
                 </Accordion.Item>
@@ -738,22 +741,22 @@ function MainApp() {
                   </Accordion.Control>
                   <Accordion.Panel>
                     {defList.length === 0 ? (
-                      <Text color={firstColor}>Select the word you want to define from the editor or click on a rhyme or word from the Tools section to see its definition</Text>
+                      <Text >Select the word you want to define from the editor or click on a rhyme or word from the Tools section to see its definition</Text>
                     ) : (
                       <>
                         {defList[0] === 'None Found' ? (
                           <>
-                            <Text fw={600} color={firstColor}>{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
+                            <Text fw={600} >{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
                             <ul style={{ paddingLeft: '1.5rem' }}>
-                              <li color={firstColor}>None Found</li>
+                              <li >None Found</li>
                             </ul>
                           </>
                         ) : (
                           <>
-                            <Text fw={600} color={firstColor}>{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
-                            <ul style={{ paddingLeft: '1.5rem', color: firstColor }}>
+                            <Text fw={600} >{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
+                            <ul style={{ paddingLeft: '1.5rem', }}>
                               {defList.slice(0, Math.floor(numOfRhymes / 2)).map((definition, index) => (
-                                <li key={index} color={firstColor}><Text color={firstColor}>{definition.definition}</Text></li>
+                                <li key={index} ><Text >{definition.definition}</Text></li>
                               ))}
                             </ul>
                           </>
@@ -770,12 +773,12 @@ function MainApp() {
                   <Accordion.Panel>
                     {synonyms.length > 0 ? (
                       <>
-                        <Text fw={600} color={firstColor}>{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
+                        <Text fw={600} >{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
                         <ul style={{ paddingLeft: '1.5rem' }}>
                           {synonyms.slice(0, numOfRhymes).map((synonym, index) => (
                             <li key={index}>
                               {synonym === 'None Found' ? (
-                                <Text color={firstColor}>{synonym}</Text>
+                                <Text >{synonym}</Text>
                               ) : (
                                 <UnstyledButton
                                   type="button"
@@ -790,7 +793,7 @@ function MainApp() {
                         </ul>
                       </>
                     ) : (
-                      <Text color={firstColor}>Select a word from the editor to search for synonyms</Text>
+                      <Text >Select a word from the editor to search for synonyms</Text>
                     )}
                   </Accordion.Panel>
                 </Accordion.Item>

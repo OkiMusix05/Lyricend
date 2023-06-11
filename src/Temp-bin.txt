@@ -1,9 +1,3 @@
-<PasswordInput
-                            required
-                            label="Password"
-                            placeholder="Your password"
-                            value={form.values.pwd}
-                            onChange={(event) => form.setFieldValue('pwd', event.currentTarget.value)}
-                            error={form.errors.pwd && 'Password should include at least 6 characters'}
-                            radius="md"
-                        />
+git add .
+git commit -m "Version0.X - Description"
+git push origin main

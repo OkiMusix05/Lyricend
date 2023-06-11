@@ -22,7 +22,7 @@ import { useState, useEffect } from 'react';
 import { PasswordProgress, /*pwdValue*/ } from './_pwdProgress.tsx'
 import { Notifications, notifications } from '@mantine/notifications';
 //import { getSongList } from '../App.js';
-//import { MantineProvider } from '@mantine/core';
+import { Anchor } from '@mantine/core';
 
 export function AuthenticationForm(props) {
     const [pwdValue, setPwdValue] = useState('');
@@ -226,19 +226,22 @@ export function AuthenticationForm(props) {
                         />
                         {type === 'register' && <PasswordProgress pwdValue={pwdValue} setPwdValue={setPwdValue} />}
                         {type === 'login' && (
-                            <PasswordInput
-                                required
-                                label="Password"
-                                placeholder="Your password"
-                                name="pwd"
-                                value={pwdValue}
-                                onChange={(event) => {
-                                    form.setFieldValue('pwd', event.currentTarget.value);
-                                    setPwdValue(event.currentTarget.value);
-                                }}
-                                error={form.errors.pwd}
-                                radius="md"
-                            />
+                            <>
+                                <PasswordInput
+                                    required
+                                    label="Password"
+                                    placeholder="Your password"
+                                    name="pwd"
+                                    value={pwdValue}
+                                    onChange={(event) => {
+                                        form.setFieldValue('pwd', event.currentTarget.value);
+                                        setPwdValue(event.currentTarget.value);
+                                    }}
+                                    error={form.errors.pwd}
+                                    radius="md"
+                                />
+                            </>
+
                         )}
 
                         {type === 'register' && (
