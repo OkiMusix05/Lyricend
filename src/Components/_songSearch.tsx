@@ -9,7 +9,7 @@ export function SearchSongInput() {
     const timeoutRef = useRef<number>(-1);
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<string[]>([]);
-    const { songList, setSongList, getSongList, searchSongFilter, setSearchSongFilter } = useContext(songListCtx);
+    const { songList, setSongList, /*getSongList,*/ searchSongFilter, setSearchSongFilter } = useContext(songListCtx);
     const [element, setElement] = useState(undefined);
     const ref = useRef<HTMLInputElement>(null);
 

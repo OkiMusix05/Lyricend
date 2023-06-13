@@ -1,3 +1,7 @@
 git add .
 git commit -m "Version0.X - Description"
 git push origin main
+
+editor?.commands.insertContent(`<h2>Untitled ${Math.trunc(Math.random() * 10000)}</h2>`);
+        editor?.commands.enter();
+        editor?.commands.focus();

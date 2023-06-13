@@ -4,9 +4,9 @@ import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, re
 import { useLocalStorage, useHotkeys, useColorScheme } from '@mantine/hooks';
 import { UserPanel } from './Components/_user.tsx';
 import { SearchSongInput } from './Components/_songSearch.tsx';
-import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars } from '@tabler/icons-react';
-import { RichTextEditor } from '@mantine/tiptap';
-import { useEditor, BubbleMenu } from '@tiptap/react';
+import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus } from '@tabler/icons-react';
+import { RichTextEditor, Link } from '@mantine/tiptap';
+import { useEditor, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { ModalsProvider, modals } from '@mantine/modals';
 import { Notifications, notifications } from '@mantine/notifications';
@@ -30,7 +30,7 @@ import {
 import { AuthenticationForm } from "./Components/auth.js"
 import { auth, db } from './config/firebase'
 import { onAuthStateChanged } from "firebase/auth";
-import { getDocs, collection, setDoc, deleteDoc, doc, query, where } from 'firebase/firestore'
+import { getDocs, collection, setDoc, deleteDoc, doc, query, where, onSnapshot, QuerySnapshot } from 'firebase/firestore'
 import { UnstyledButton } from '@mantine/core';
 //import songs from `${process.env.PUBLIC_URL}/songs.json`;
 
@@ -46,7 +46,7 @@ export const songListCtx = createContext({});
 let numOfRhymes = 8;
 
 export default function App() {
-  const [colorScheme, setColorScheme] = useLocalStorage('mantine-color-scheme', 'light');
+  const [colorScheme, setColorScheme] = useLocalStorage('mantine-color-scheme', 'dark');
 
   const toggleColorScheme = (value) =>
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
@@ -227,7 +227,6 @@ function MainApp() {
       setAccValue('def')
     }
   }
-
   //Authentication
   const [isSigned, setIsSigned] = useState(false);
   const [uid, setUID] = useState('');
@@ -237,16 +236,40 @@ function MainApp() {
         setIsSigned(true);
         setUID(user.uid);
       } else {
-        setIsSigned(false)
+        setUID('');
+        setIsSigned(false);
       }
-    });        // Clean up the listener when the component unmounts
+    });
     return () => {
       authStateListener();
     };
   }, []);
+
+  //FireStore Data Base
+  const [songList, setSongList] = useState([]);
+  const lyricsCollectionRef = collection(db, "Lyrics");
+  //Retrieve SongList if the user is signed - an alternative to getSongList();
+  useEffect(() => {
+    try {
+      const userSongs = query(lyricsCollectionRef, where("_uid", "==", uid));
+      const unsubscribe = onSnapshot(userSongs, (querySnapshot) => {
+        const _songs = [];
+        querySnapshot.forEach((doc) => {
+          _songs.push(doc.data());
+        });
+        setSongList(_songs);
+      });
+      if (!isSigned) {
+        unsubscribe();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [isSigned]);
+
   useEffect(() => {
     if (isSigned === true) {
-      getSongList();
+      /*getSongList();*/
       setEditable(true);
     }
     else {
@@ -256,25 +279,6 @@ function MainApp() {
     }
     console.log("Changed isSigned")
   }, [isSigned])
-
-  //FireStore Data Base
-  const [songList, setSongList] = useState([]);
-  const lyricsCollectionRef = collection(db, "Lyrics");
-
-  //For getting the list and displaying all of the songs the user has made
-  const getSongList = async () => {
-    //READ THE DATA
-    //SET LIST
-    try {
-      const userSongs = query(lyricsCollectionRef, where("_uid", "==", uid));
-      const data = await getDocs(userSongs);
-      const filteredData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-      setSongList(filteredData);
-      console.log("getSongList()");
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   //For Saving files
   const [isSaved, setIsSaved] = useState(false);
@@ -294,8 +298,8 @@ function MainApp() {
         });
         console.log("read")
         setIsSaved(true);
-        handleOpen(uid, key, value);
-        getSongList();
+        //handleOpen(uid, key, value);
+        /*getSongList();*/
         notifications.show({
           title: '"' + key + '" was succesfully saved!',
           message: 'Well done with this one!',
@@ -345,7 +349,7 @@ function MainApp() {
         }),
       });
       setSearchSongFilter('');
-      getSongList();
+      /*getSongList();*/
     } else {
       notifications.show({
         title: 'Editor is Locked',
@@ -353,15 +357,31 @@ function MainApp() {
       })
     }
   }
+  //Create File
+  const handleCreate = () => {
+    editor?.commands.clearContent();
+    editor?.commands.insertContent(`<h2>Untitled ${Math.trunc(Math.random() * 100000)}</h2>`);
+    editor?.commands.enter();
+    editor?.commands.focus();
+    notifications.show({
+      title: 'New song created!',
+      message: 'Good Luck!',
+      styles: (theme) => ({
+        root: {
+          '&::before': { backgroundColor: theme.colors.teal[6] },
+        },
+      }),
+    });
+  }
   //Delete File
   const handleDelete = async (sid, title) => {
     const deletedSong = doc(db, "Lyrics", sid)
     await deleteDoc(deletedSong);
     editor?.commands.clearContent();
-    getSongList();
+    /*getSongList();*/
     notifications.show({
       title: 'Song Deleted',
-      message: 'Your song "' + title + '" is still safe!',
+      message: 'Your song "' + title + '" was succesfully deleted!',
     })
   }
   //Verification Modals
@@ -428,7 +448,7 @@ function MainApp() {
       return undefined
     }
 
-    editor.setEditable(editable)
+    editor.setEditable(editable);
   }, [editor, editable])
 
   if (!editor) {
@@ -470,11 +490,43 @@ function MainApp() {
             >
               <Group position="apart">
                 <Title order={3}>Projects</Title>
-                <Tooltip label="Save" color='blue' withArrow position="bottom" openDelay={1000}>
-                  <ActionIcon variant="default" onClick={() => handleSave()} size={30}>
-                    {isSaved === true ? <IconFileCheck size="1rem" color="teal" /> : <IconFile size="1rem" />}
-                  </ActionIcon>
-                </Tooltip>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <Tooltip label="New Song" color='blue' withArrow position="bottom" openDelay={1000}>
+                    <ActionIcon variant="default" onClick={() => {
+                      if (editor.getText() === '' || isSaved) {
+                        handleCreate();
+                      } else {
+                        modals.openConfirmModal({
+                          title: 'The current song has not been saved!',
+                          centered: true,
+                          children: (
+                            <Text size="sm">
+                              Do you want to create a new song?
+                            </Text>
+                          ),
+                          labels: { confirm: 'Save', cancel: "Create anyways" },
+                          confirmProps: { color: 'teal' },
+                          onCancel: () => {
+                            handleCreate();
+                          },
+                          onConfirm: async () => {
+                            await handleSave();
+                            await handleCreate();
+                            /*notifications.show({
+                              title: '"' + editor?.getHTML()?.replaceAll('</p><p>', '\n')?.replace('<p>', '')?.replace('</p>', '')?.replaceAll('<h2>', '')?.replaceAll('</h2>', '\n').split('\n')[0].trim() + '" saved!',
+                              message: 'New song now created. Good luck!',
+                            })*/
+                          },
+                        });
+                      }
+                    }} style={{ marginRight: '0.5rem' }} size={30}><IconPlus size="1rem" /></ActionIcon>
+                  </Tooltip>
+                  {editor.getText() !== '' ? (<Tooltip label="Save" color='blue' withArrow position="bottom" openDelay={1000}>
+                    <ActionIcon variant="default" onClick={() => handleSave()} style={{ marginRight: '0.5rem' }} size={30}>
+                      {isSaved === true ? <IconFileCheck size="1rem" color="teal" /> : <IconFile size="1rem" />}
+                    </ActionIcon>
+                  </Tooltip>) : (<></>)}
+                </div>
               </Group>
             </Box>
           </Navbar.Section>
@@ -583,7 +635,7 @@ function MainApp() {
             </Box>
           </Navbar.Section>
           <Navbar.Section>
-            <songListCtx.Provider value={{ songList, setSongList, getSongList, searchSongFilter, setSearchSongFilter }}>
+            <songListCtx.Provider value={{ songList, setSongList, /*getSongList,*/ searchSongFilter, setSearchSongFilter }}>
               <SearchSongInput />
             </songListCtx.Provider>
             <isSavedCtx.Provider value={{ isSaved, setIsSaved, editor }}>
@@ -813,17 +865,41 @@ function MainApp() {
         <div className="container">
           <RichTextEditor editor={editor} style={{ width: "100%" }}>
             {editor && (
-              <BubbleMenu editor={editor} style={{ display: 'flex' }}>
-                <Button color="pink" variant="light" compact onClick={() => rhymeF(window.getSelection().toString().trim().split(' ').pop(), 'select')} style={{ marginRight: '0.3rem' }}>
-                  Rhymes
-                </Button>
-                <Button color="pink" variant="light" compact onClick={() => SynF(window.getSelection().toString().trim().split(' ').pop())} style={{ marginRight: '0.3rem' }}>
-                  Synonims
-                </Button>
-                <Button color="pink" variant="light" compact onClick={() => DefineF(window.getSelection().toString().trim().split(' ').pop())} style={{ marginRight: '0.3rem' }}>
-                  Define
-                </Button>
-              </BubbleMenu>
+              <>
+                <BubbleMenu editor={editor} style={{ display: 'flex' }}>
+                  <Button color="pink" variant="light" compact onClick={() => rhymeF(window.getSelection().toString().trim().split(' ').pop(), 'select')} style={{ marginRight: '0.3rem' }}>
+                    Rhymes
+                  </Button>
+                  <Button color="pink" variant="light" compact onClick={() => SynF(window.getSelection().toString().trim().split(' ').pop())} style={{ marginRight: '0.3rem' }}>
+                    Synonims
+                  </Button>
+                  <Button color="pink" variant="light" compact onClick={() => DefineF(window.getSelection().toString().trim().split(' ').pop())} style={{ marginRight: '0.3rem' }}>
+                    Define
+                  </Button>
+                </BubbleMenu>
+                <FloatingMenu editor={editor}>
+                  <RichTextEditor.ControlsGroup>
+                    <RichTextEditor.Control
+                      onClick={() => { editor?.commands.insertContent('<h3>verse</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}
+                      title="Intro"
+                    >
+                      <Text size="0.6rem">verse</Text>
+                    </RichTextEditor.Control>
+                    <RichTextEditor.Control
+                      onClick={() => { editor?.commands.insertContent('<h3>pre chorus</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}
+                      title="Pre-chorus"
+                    >
+                      <Text size="0.6rem"> pre </Text>
+                    </RichTextEditor.Control>
+                    <RichTextEditor.Control
+                      onClick={() => { editor?.commands.insertContent('<h3>chorus</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}
+                      title="Chorus"
+                    >
+                      <Text size="0.6rem">chorus</Text>
+                    </RichTextEditor.Control>
+                  </RichTextEditor.ControlsGroup>
+                </FloatingMenu>
+              </>
             )}
             <RichTextEditor.Content value={text} />
           </RichTextEditor>
