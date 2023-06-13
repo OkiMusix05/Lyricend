@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useState, useRef, useEffect, createContext, useContext } from 'react';
-import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, rem, useMantineTheme } from '@mantine/core';
+import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, rem, useMantineTheme, Skeleton } from '@mantine/core';
 import { useLocalStorage, useHotkeys, useColorScheme } from '@mantine/hooks';
 import { UserPanel } from './Components/_user.tsx';
-import { SearchSongInput } from './Components/_songSearch.tsx';
-import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus } from '@tabler/icons-react';
+//import { SearchSongInput } from './Components/_songSearch.tsx';
+import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon } from '@tabler/icons-react';
 import { RichTextEditor, Link } from '@mantine/tiptap';
 import { useEditor, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -26,6 +26,7 @@ import {
   Tooltip,
   Button,
   Textarea,
+  Input
 } from '@mantine/core';
 import { AuthenticationForm } from "./Components/auth.js"
 import { auth, db } from './config/firebase'
@@ -40,7 +41,7 @@ import './App.css';
 //const mql = window.matchMedia(`(min-width: 800px)`);
 //Context
 export const isSavedCtx = createContext({});
-export const songListCtx = createContext({});
+//export const songListCtx = createContext({});
 
 //const API_KEY = '/1gJtFMabYLBlll1mYo+Og==m9WXbzQarLTMvbLI';
 let numOfRhymes = 8;
@@ -80,9 +81,6 @@ function MainApp() {
 
   //Accordion Control
   const [accValue, setAccValue] = useState("");
-
-  //Filter Songs:
-  const [searchSongFilter, setSearchSongFilter] = useState('');
 
   //Master Rhyme Function - There used to be 2 functions but now it's just one with the common logic
   const rhymeF = async (word, where) => {
@@ -247,6 +245,13 @@ function MainApp() {
 
   //FireStore Data Base
   const [songList, setSongList] = useState([]);
+  //Filter through the songs
+  const [filterQuery, setFilterQuery] = useState('');
+  const filteredSongList = useMemo(() => {
+    return songList.filter(song => {
+      return song.title.toLowerCase().includes(filterQuery.toLowerCase());
+    })
+  }, [songList, filterQuery]);
   const lyricsCollectionRef = collection(db, "Lyrics");
   //Retrieve SongList if the user is signed - an alternative to getSongList();
   useEffect(() => {
@@ -348,7 +353,7 @@ function MainApp() {
           },
         }),
       });
-      setSearchSongFilter('');
+      setFilterQuery('');
       /*getSongList();*/
     } else {
       notifications.show({
@@ -532,7 +537,7 @@ function MainApp() {
           </Navbar.Section>
           <Navbar.Section grow component={ScrollArea} mx="-xs" px="xs">
             <Box py="md">
-              {songList.map((song) => (
+              {filteredSongList.length !== 0 ? filteredSongList.map((song) => (
                 <UnstyledButton key={song._sid}
                   sx={(theme) => ({
                     display: 'block',
@@ -631,13 +636,50 @@ function MainApp() {
                     </ActionIcon>
                   </Group>
                 </UnstyledButton>
-              ))}
+              )) : (
+                <>
+                  {filterQuery === '' ? (
+                    <div sx={(theme) => ({
+                      display: 'block',
+                      width: '100%',
+                      padding: theme.spacing.xs,
+                      borderRadius: theme.radius.sm,
+                      color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
+
+                      '&:hover': {
+                        backgroundColor:
+                          theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
+                      },
+                      '&:hover .deleteIcon': {
+                        display: 'block',
+                      }
+                    })}>
+                      <Group sx={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Skeleton height="2rem" mt={6} radius="m" />
+                      </Group>
+                    </div>
+                  ) : (
+                    <UnstyledButton
+                      style={{ cursor: 'auto', }}
+                      sx={(theme) => ({
+                        display: 'block',
+                        width: '100%',
+                        padding: theme.spacing.xs,
+                        borderRadius: theme.radius.sm,
+                        color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
+                      })}><Group sx={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Group><IconAlertHexagon size="1rem" /><Text size="sm">No songs found</Text></Group>
+                      </Group></UnstyledButton>)}
+                </>)}
             </Box>
           </Navbar.Section>
           <Navbar.Section>
-            <songListCtx.Provider value={{ songList, setSongList, /*getSongList,*/ searchSongFilter, setSearchSongFilter }}>
-              <SearchSongInput />
-            </songListCtx.Provider>
+            <Input
+              value={filterQuery}
+              onChange={(event) => setFilterQuery(event.currentTarget.value)}
+              placeholder="Search in your songs..."
+              dropdownPosition="top"
+            />
             <isSavedCtx.Provider value={{ isSaved, setIsSaved, editor }}>
               <UserPanel />
             </isSavedCtx.Provider>
@@ -896,6 +938,12 @@ function MainApp() {
                       title="Chorus"
                     >
                       <Text size="0.6rem">chorus</Text>
+                    </RichTextEditor.Control>
+                    <RichTextEditor.Control
+                      onClick={() => { editor?.commands.insertContent('<h3>bridge</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}
+                      title="Bridge"
+                    >
+                      <Text size="0.6rem">bridge</Text>
                     </RichTextEditor.Control>
                   </RichTextEditor.ControlsGroup>
                 </FloatingMenu>
