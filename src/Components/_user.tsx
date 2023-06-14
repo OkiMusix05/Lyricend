@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useContext } from 'react';
 import { IconChevronRight, IconChevronLeft } from '@tabler/icons-react';
-import { UnstyledButton, Group, Avatar, Text, Box, useMantineTheme, rem, Button } from '@mantine/core';
+import { UnstyledButton, Group, Avatar, Text, Box, useMantineTheme, rem, Button, Skeleton } from '@mantine/core';
 import { auth } from '../config/firebase'
 import { onAuthStateChanged } from "firebase/auth";
 import { useState, useEffect } from 'react';
@@ -26,6 +26,7 @@ export function UserPanel() {
     const [displayName, setDP] = useState('');
     const [userEmail, setUE] = useState('');
     const [pfp, setPFP] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const authStateListener = onAuthStateChanged(auth, (user) => {
@@ -40,6 +41,7 @@ export function UserPanel() {
                 setUE('N/A')
                 setPFP('${process.env.PUBLIC_URL}/emptypfp.png')
             }
+            setIsLoading(false);
         });
 
         // Clean up the listener when the component unmounts
@@ -129,17 +131,17 @@ export function UserPanel() {
             }}
         >
             <Group>
-                <Avatar
+                {isLoading ? (<Skeleton height="2rem" circle mb="xl" />) : (<Avatar
                     src={isSigned ? pfp : ''}
                     radius="xl"
-                />
+                />)}
                 <Box sx={{ flex: 1 }}>
-                    <Text size="sm" weight={500}>
+                    {isLoading ? (<><Skeleton height="0.5rem" width="100%" /></>) : (<><Text size="sm" weight={500}>
                         {isSigned ? displayName : "No User"}
                     </Text>
-                    <Text color="dimmed" size="xs">
-                        {isSigned ? userEmail.split('@')[0] : ""}
-                    </Text>
+                        <Text color="dimmed" size="xs">
+                            {isSigned ? userEmail.split('@')[0] : ""}
+                        </Text></>)}
                 </Box>
 
                 {theme.dir === 'ltr' ? (

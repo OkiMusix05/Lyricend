@@ -212,23 +212,56 @@ export function AuthenticationForm(props) {
                                 radius="md"
                             />
                         )}
-
-                        <TextInput
-                            required
-                            data-autofocus
-                            label="Email"
-                            placeholder="your@email.com"
-                            value={form.values.email}
-                            onChange={(event) => form.setFieldValue('email', event.currentTarget.value)}
-                            error={form.errors.email && 'Invalid email'}
-                            radius="md"
-                        />
+                        <>
+                            <Text
+                                component="label"
+                                htmlFor="your-password"
+                                size="sm"
+                                weight={500}
+                            >
+                                Email
+                            </Text>
+                            <TextInput
+                                required
+                                data-autofocus
+                                //label="Email"
+                                placeholder="your@email.com"
+                                value={form.values.email}
+                                onChange={(event) => form.setFieldValue('email', event.currentTarget.value)}
+                                error={form.errors.email && 'Invalid email'}
+                                radius="md"
+                                style={{ marginTop: "-0.8rem" }}
+                            />
+                        </>
                         {type === 'register' && <PasswordProgress pwdValue={pwdValue} setPwdValue={setPwdValue} />}
                         {type === 'login' && (
                             <>
+                                <Group position="apart" mb={5} style={{ alignItems: 'flex-start' }}>
+                                    <Text
+                                        component="label"
+                                        htmlFor="your-password"
+                                        size="sm"
+                                        weight={500}
+                                    >
+                                        Password
+                                    </Text>
+
+                                    <Anchor
+                                        href="#"
+                                        onClick={(event) => event.preventDefault()}
+                                        sx={(theme) => ({
+                                            paddingTop: 2,
+                                            color: theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 4 : 6],
+                                            fontWeight: 500,
+                                            fontSize: theme.fontSizes.xs,
+                                        })}
+                                    >
+                                        Forgot your password?
+                                    </Anchor>
+                                </Group>
                                 <PasswordInput
                                     required
-                                    label="Password"
+                                    //label="Password"
                                     placeholder="Your password"
                                     name="pwd"
                                     value={pwdValue}
@@ -238,6 +271,7 @@ export function AuthenticationForm(props) {
                                     }}
                                     error={form.errors.pwd}
                                     radius="md"
+                                    style={{ marginTop: '-1.2rem' }}
                                 />
                             </>
 
