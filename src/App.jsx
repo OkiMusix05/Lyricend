@@ -28,7 +28,7 @@ import {
   Textarea,
   Input
 } from '@mantine/core';
-import { AuthenticationForm } from "./Components/auth.js"
+import { AuthenticationForm } from "./Components/auth.jsx"
 import { auth, db } from './config/firebase'
 import { onAuthStateChanged } from "firebase/auth";
 import { getDocs, collection, setDoc, deleteDoc, doc, query, where, onSnapshot, QuerySnapshot } from 'firebase/firestore'

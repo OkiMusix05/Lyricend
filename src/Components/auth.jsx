@@ -19,7 +19,7 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useState, useEffect } from 'react';
-import { PasswordProgress, /*pwdValue*/ } from './_pwdProgress.tsx'
+import { PasswordProgress, /*pwdValue*/ } from './_pwdProgress'
 import { Notifications, notifications } from '@mantine/notifications';
 //import { getSongList } from '../App.js';
 

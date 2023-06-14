@@ -6,7 +6,7 @@ import { auth } from '../config/firebase'
 import { onAuthStateChanged } from "firebase/auth";
 import { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth'
-import { isSavedCtx } from '../App.js'
+import { isSavedCtx } from '../App.jsx'
 import { ModalsProvider, modals } from '@mantine/modals';
 import { Notifications, notifications } from '@mantine/notifications';
 export function UserPanel() {
