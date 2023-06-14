@@ -39,7 +39,7 @@ export function UserPanel() {
                 setIsSigned(false);
                 setDP('No User');
                 setUE('N/A')
-                setPFP('${process.env.PUBLIC_URL}/emptypfp.png')
+                setPFP('')
             }
             setIsLoading(false);
         });
