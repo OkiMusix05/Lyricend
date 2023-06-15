@@ -5,7 +5,7 @@ import { useLocalStorage, useHotkeys, useColorScheme } from '@mantine/hooks';
 import { UserPanel } from './Components/_user.tsx';
 //import { SearchSongInput } from './Components/_songSearch.tsx';
 import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon } from '@tabler/icons-react';
-import { RichTextEditor, Link } from '@mantine/tiptap';
+import { RichTextEditor } from '@mantine/tiptap';
 import { useEditor, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { ModalsProvider, modals } from '@mantine/modals';
@@ -33,6 +33,9 @@ import { auth, db } from './config/firebase'
 import { onAuthStateChanged } from "firebase/auth";
 import { getDocs, collection, setDoc, deleteDoc, doc, query, where, onSnapshot, QuerySnapshot } from 'firebase/firestore'
 import { UnstyledButton } from '@mantine/core';
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { NotFoundPage } from './Pages/404.tsx';
+import { HomePage } from './Pages/Home.tsx'
 //import songs from `${process.env.PUBLIC_URL}/songs.json`;
 
 import './App.css';
@@ -59,13 +62,25 @@ export default function App() {
         <MantineProvider theme={{ colorScheme }} withGlobalStyles withNormalizeCSS>
           <Notifications limit={2} />
           <ModalsProvider>
-            <MainApp />
+            <BrowserRouter>
+              <RoutesManager />
+            </BrowserRouter>
           </ModalsProvider>
         </MantineProvider>
       </ColorSchemeProvider>
     </>
   );
 }
+
+function RoutesManager() {
+  return (
+    <Routes>
+      <Route path="/" element={<MainApp />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  )
+}
+
 function MainApp() {
   //App Theme
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();

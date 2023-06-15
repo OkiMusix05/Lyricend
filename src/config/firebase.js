@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, TwitterAuthProvider } from 'firebase/auth'
+import { getStorage } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore'
 //import { getAnalytics } from "firebase/analytics";
 
@@ -19,4 +20,5 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const twitterProvider = new TwitterAuthProvider();
 export const db = getFirestore(app)
+export const storage = getStorage(app);
 //const analytics = getAnalytics(app);
