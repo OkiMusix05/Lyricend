@@ -10,3 +10,4 @@ This project is still in alpha and it's not open source.
 - v0.25: After Vite migration; with build
 - v0.26: Optimized Vite Build
 - v0.27: Routing and updates for name and pfp
+- v0.28: Same as v0.27; With Build
