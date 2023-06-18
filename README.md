@@ -13,4 +13,5 @@ This project is still in alpha and it's not open source.
 - v0.28: Same as v0.27; With Build
 - v0.29: Bugs, and Twitter Auth for https://lyricend-6b31f.web.app/
 - v0.291: Minor style fix for NumberInput
-- v0.292: Just another minor change 
+- v0.292: Just another minor change
+- v0.293: The Fixes; with build 
