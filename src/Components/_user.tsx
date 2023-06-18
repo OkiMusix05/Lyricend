@@ -282,7 +282,7 @@ export function UserPanel() {
                                 <NumberInput
                                     value={numOfRhymes}
                                     onChange={setNumOfRhymes}
-                                    style={{ marginBottom: '1rem' }}
+                                    style={{ marginBottom: '1rem', }}
                                 // label="# of rhymes displayed"
                                 />
                                 <Text fw={400}>Keyboard Shortcuts</Text>
