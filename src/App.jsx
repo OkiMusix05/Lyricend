@@ -4,7 +4,7 @@ import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, re
 import { useLocalStorage, useHotkeys, useColorScheme } from '@mantine/hooks';
 import { UserPanel } from './Components/_user.tsx';
 //import { SearchSongInput } from './Components/_songSearch.tsx';
-import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon } from '@tabler/icons-react';
+import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon, IconFileUnknown } from '@tabler/icons-react';
 import { RichTextEditor } from '@mantine/tiptap';
 import { useEditor, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -47,10 +47,10 @@ export const isSavedCtx = createContext({});
 //export const songListCtx = createContext({});
 
 //const API_KEY = '/1gJtFMabYLBlll1mYo+Og==m9WXbzQarLTMvbLI';
-let numOfRhymes = 8;
+//let numOfRhymes = 8;
 
 export default function App() {
-  const [colorScheme, setColorScheme] = useLocalStorage('mantine-color-scheme', 'dark');
+  const [colorScheme, setColorScheme] = useLocalStorage({ key: 'mantine-color-scheme', defaultValue: 'dark' });
 
   const toggleColorScheme = (value) =>
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
@@ -93,6 +93,8 @@ function MainApp() {
   const timerRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [rhymes, setRhymes] = useState({ perfectRhyme: [], nearRhyme: [] });
+  const [numOfRhymes, setNumOfRhymes] = useLocalStorage({ key: 'num-of-rhymes', defaultValue: 8 });
+  const [isSongListLoaded, setIsSongListLoaded] = useState(false);
 
   //Accordion Control
   const [accValue, setAccValue] = useState("");
@@ -278,9 +280,12 @@ function MainApp() {
           _songs.push(doc.data());
         });
         setSongList(_songs);
+        setIsSongListLoaded(true);
       });
       if (!isSigned) {
         unsubscribe();
+        //Verified that it is actually unsubsribing.
+        // setIsSongListLoaded(false);
       }
     } catch (error) {
       console.error(error);
@@ -654,25 +659,41 @@ function MainApp() {
               )) : (
                 <>
                   {filterQuery === '' ? (
-                    <div sx={(theme) => ({
-                      display: 'block',
-                      width: '100%',
-                      padding: theme.spacing.xs,
-                      borderRadius: theme.radius.sm,
-                      color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
+                    <>
+                      {!isSongListLoaded ? (
+                        <div sx={(theme) => ({
+                          display: 'block',
+                          width: '100%',
+                          padding: theme.spacing.xs,
+                          borderRadius: theme.radius.sm,
+                          color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
 
-                      '&:hover': {
-                        backgroundColor:
-                          theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-                      },
-                      '&:hover .deleteIcon': {
-                        display: 'block',
-                      }
-                    })}>
-                      <Group sx={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Skeleton height="2rem" mt={6} radius="m" />
-                      </Group>
-                    </div>
+                          '&:hover': {
+                            backgroundColor:
+                              theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
+                          },
+                          '&:hover .deleteIcon': {
+                            display: 'block',
+                          }
+                        })}>
+                          <Group sx={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Skeleton height="2rem" mt={6} radius="m" />
+                          </Group>
+                        </div>
+                      ) : (
+                        <UnstyledButton
+                          style={{ cursor: 'auto', }}
+                          sx={(theme) => ({
+                            display: 'block',
+                            width: '100%',
+                            padding: theme.spacing.xs,
+                            borderRadius: theme.radius.sm,
+                            color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
+                          })}><Group sx={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Group><IconFileUnknown size="1rem" /><Text size="sm">Song List Empty</Text></Group>
+                          </Group></UnstyledButton>
+                      )}
+                    </>
                   ) : (
                     <UnstyledButton
                       style={{ cursor: 'auto', }}
@@ -695,7 +716,7 @@ function MainApp() {
               placeholder="Search in your songs..."
               dropdownPosition="top"
             />
-            <isSavedCtx.Provider value={{ isSaved, setIsSaved, editor }}>
+            <isSavedCtx.Provider value={{ isSaved, setIsSaved, editor, numOfRhymes, setNumOfRhymes }}>
               <UserPanel />
             </isSavedCtx.Provider>
           </Navbar.Section>

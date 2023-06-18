@@ -21,4 +21,9 @@ export const googleProvider = new GoogleAuthProvider();
 export const twitterProvider = new TwitterAuthProvider();
 export const db = getFirestore(app)
 export const storage = getStorage(app);
+
+//Twitter Client-ID:
+// aXhteE1KN3JibU1ib3puc05yUEE6MTpjaQ
+//Twitter Client Secret:
+// _WP1S84roN-Bm99ZeNHFjT6a8wKRJ4IjktoJ64gugVXkJQBXRt
 //const analytics = getAnalytics(app);

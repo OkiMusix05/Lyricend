@@ -3,7 +3,7 @@ import { useToggle, upperFirst } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 import { IconBrandGoogle, IconBrandTwitter } from '@tabler/icons-react';
 import { auth, googleProvider, twitterProvider } from '../config/firebase'
-import { createUserWithEmailAndPassword, signInWithPopup, TwitterAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { createUserWithEmailAndPassword, signInWithPopup, TwitterAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, getAdditionalUserInfo } from 'firebase/auth'
 import {
     TextInput,
     PasswordInput,
@@ -93,70 +93,81 @@ export function AuthenticationForm(props) {
     }
     //Regular email sign-in
     const signIn = async (values) => {
-        try {
-            await createUserWithEmailAndPassword(auth, values['email'], pwdValue).then(() => updateProfile(auth.currentUser, { displayName: values['name'] }));
-            succsesfullySignedIn();
-            //console.log("Password: " + pwdValue)
-        } catch (error) {
-            switch (error.code) {
-                case 'auth/email-already-in-use':
-                    try {
-                        await signInWithEmailAndPassword(auth, values['email'], pwdValue);
-                    } catch (error) {
-                        switch (error.code) {
-                            case 'auth/wrong-password':
-                                form.setFieldError('pwd', 'Incorrect Password');
-                                notifications.show({
-                                    title: 'Incorrect Password',
-                                    message: 'Try again',
-                                    styles: (theme) => ({
-                                        root: {
-                                            backgroundColor: theme.colors.white,
-                                            borderColor: theme.colors.red,
+        if (type === 'register') {
+            try {
+                await createUserWithEmailAndPassword(auth, values['email'], pwdValue).then(() => updateProfile(auth.currentUser, { displayName: values['name'] }));
+                succsesfullySignedIn();
+            } catch (error) {
+                switch (error.code) {
+                    default:
+                        notifications.show({
+                            title: 'Unkown Error',
+                            message: 'Try again later',
+                            styles: (theme) => ({
+                                root: {
+                                    backgroundColor: theme.colors.white,
+                                    borderColor: theme.colors.red,
 
-                                            '&::before': { backgroundColor: theme.colors.pink[6] },
-                                        },
-                                    }),
-                                });
-                                break;
-                            case 'auth/too-many-requests':
-                                notifications.show({
-                                    title: 'ACCESS BLOCKED TEMPORARILY',
-                                    message: 'Too many requests, try again later...',
-                                    styles: (theme) => ({
-                                        root: {
-                                            backgroundColor: theme.colors.white,
-                                            borderColor: theme.colors.red,
+                                    '&::before': { backgroundColor: theme.colors.pink[6] },
+                                },
+                            }),
+                        });
+                        break;
+                }
+            }
+        } else if (type === 'login') {
+            try {
+                await signInWithEmailAndPassword(auth, values['email'], pwdValue);
+            } catch (error) {
+                switch (error.code) {
+                    case 'auth/wrong-password':
+                        form.setFieldError('pwd', 'Incorrect Password');
+                        notifications.show({
+                            title: 'Incorrect Password',
+                            message: 'Try again',
+                            styles: (theme) => ({
+                                root: {
+                                    backgroundColor: theme.colors.white,
+                                    borderColor: theme.colors.red,
 
-                                            '&::before': { backgroundColor: theme.colors.pink[6] },
-                                        },
-                                    }),
-                                });
-                                break;
-                            default:
-                                throw error;
-                                break;
-                        }
-                    }
-                    break;
-                default:
-                    notifications.show({
-                        title: 'Unkown Error',
-                        message: 'Try again later',
-                        styles: (theme) => ({
-                            root: {
-                                backgroundColor: theme.colors.white,
-                                borderColor: theme.colors.red,
+                                    '&::before': { backgroundColor: theme.colors.pink[6] },
+                                },
+                            }),
+                        });
+                        break;
+                    case 'auth/too-many-requests':
+                        notifications.show({
+                            title: 'ACCESS BLOCKED TEMPORARILY',
+                            message: 'Too many requests, try again later...',
+                            styles: (theme) => ({
+                                root: {
+                                    backgroundColor: theme.colors.white,
+                                    borderColor: theme.colors.red,
 
-                                '&::before': { backgroundColor: theme.colors.pink[6] },
-                            },
-                        }),
-                    });
-                    //throw error;
-                    break;
+                                    '&::before': { backgroundColor: theme.colors.pink[6] },
+                                },
+                            }),
+                        });
+                        break;
+                    case 'auth/user-not-found':
+                        notifications.show({
+                            title: 'User Not Found',
+                            message: 'Please register first!',
+                            styles: (theme) => ({
+                                root: {
+                                    backgroundColor: theme.colors.white,
+                                    borderColor: theme.colors.red,
+
+                                    '&::before': { backgroundColor: theme.colors.pink[6] },
+                                },
+                            }),
+                        });
+                        break;
+                    default:
+                        throw error;
+                }
             }
         }
-
     };
 
     //Checks wether the user is or isn't signed

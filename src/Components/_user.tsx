@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useContext } from 'react';
 import { IconChevronRight, IconChevronLeft, IconAt, IconArrowRight, IconCheck, IconUpload, IconPhoto, IconX } from '@tabler/icons-react';
-import { UnstyledButton, Group, Avatar, Text, Box, useMantineTheme, rem, Button, Skeleton, Grid, ActionIcon, Flex, Image, Kbd, LoadingOverlay } from '@mantine/core';
+import { UnstyledButton, Group, Avatar, Text, Box, useMantineTheme, rem, Button, Skeleton, Grid, ActionIcon, Flex, Image, Kbd, LoadingOverlay, NumberInput } from '@mantine/core';
 import { auth, storage } from '../config/firebase';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged, updateProfile } from "firebase/auth";
@@ -28,7 +28,7 @@ export function UserPanel() {
             isSigned = false
         }
     });*/
-    const { isSaved, editor } = useContext(isSavedCtx);
+    const { isSaved, editor, numOfRhymes, setNumOfRhymes } = useContext(isSavedCtx);
     const [isSigned, setIsSigned] = useState(false);
     const [displayName, setDP] = useState('');
     const [userEmail, setUE] = useState('');
@@ -278,6 +278,12 @@ export function UserPanel() {
                                         </ActionIcon>
                                     } onChange={(event) => form.setFieldValue('name', event.currentTarget.value)} icon={<IconAt size="0.8rem" />} />
                                 </form>
+                                <Text fw={400} style={{ marginBottom: '0.2rem' }}># of rhymes displayed</Text>
+                                <NumberInput
+                                    value={numOfRhymes}
+                                    onChange={setNumOfRhymes}
+                                // label="# of rhymes displayed"
+                                />
                                 <Text fw={400}>Keyboard Shortcuts</Text>
                                 <ul style={{ marginTop: '0px' }}>
                                     <li>
