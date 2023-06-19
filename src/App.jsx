@@ -356,6 +356,7 @@ function MainApp() {
       } else {
         if (openID !== '') {
           try {
+            console.log(uid);
             await setDoc(doc(db, "Lyrics", openID), {
               title: key,
               lyrics: value,
@@ -652,7 +653,7 @@ function MainApp() {
                   <Group sx={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Group>
                       <IconFilePencil size="1rem" />
-                      <Text size="sm">{song.title}</Text>
+                      <Text size="sm" lineClamp={1}>{song.title}</Text>
                     </Group>
                     <ActionIcon
                       variant="subtle"

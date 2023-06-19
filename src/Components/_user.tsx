@@ -1,7 +1,7 @@
 // @ts-nocheck
-import React, { useContext } from 'react';
-import { IconChevronRight, IconChevronLeft, IconAt, IconArrowRight, IconCheck, IconUpload, IconPhoto, IconX } from '@tabler/icons-react';
-import { UnstyledButton, Group, Avatar, Text, Box, useMantineTheme, rem, Button, Skeleton, Grid, ActionIcon, Flex, Image, Kbd, LoadingOverlay, NumberInput } from '@mantine/core';
+import React, { useContext, createContext, useRef } from 'react';
+import { IconChevronRight, IconChevronLeft, IconAt, IconArrowRight, IconCheck, IconUpload, IconPhoto, IconX, IconMinus, IconPlus } from '@tabler/icons-react';
+import { UnstyledButton, Group, Avatar, Text, Box, useMantineTheme, rem, Button, Skeleton, Grid, ActionIcon, Flex, Image, Kbd, LoadingOverlay, NumberInput, createStyles } from '@mantine/core';
 import { auth, storage } from '../config/firebase';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged, updateProfile } from "firebase/auth";
@@ -14,8 +14,8 @@ import { useDisclosure } from '@mantine/hooks';
 import { Modal, Paper, TextInput } from '@mantine/core';
 import { Dropzone, DropzoneProps, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { useForm } from '@mantine/form';
-import { updateProfile } from 'firebase/auth';
 import { v4 } from 'uuid';
+
 export function UserPanel() {
     const theme = useMantineTheme();
     /*let isSigned;
@@ -34,6 +34,14 @@ export function UserPanel() {
     const [userEmail, setUE] = useState('');
     const [pfp, setPFP] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    //const [value, setValue] = useState(numOfRhymes);
+
+    const { classes } = useStyles();
+    const handlers = useRef<NumberInputHandlers>(null);
+
+    /*useEffect(() => {
+        setNumOfRhymes(value);
+    }, [value]);*/
 
     //Settings Modal
     const [STmodal, { open, close }] = useDisclosure(false);
@@ -278,13 +286,40 @@ export function UserPanel() {
                                         </ActionIcon>
                                     } onChange={(event) => form.setFieldValue('name', event.currentTarget.value)} icon={<IconAt size="0.8rem" />} />
                                 </form>
-                                <Text fw={400} style={{ marginBottom: '0.2rem' }}># of rhymes displayed</Text>
-                                <NumberInput
-                                    value={numOfRhymes}
-                                    onChange={setNumOfRhymes}
-                                    style={{ marginBottom: '1rem' }}
-                                // label="# of rhymes displayed"
-                                />
+                                <Text fw={400} style={{ marginBottom: '0.2rem' }}>Num of Rhymes displayed</Text>
+                                <div className={classes.wrapper} style={{ marginBottom: '1rem' }}>
+                                    <ActionIcon<'button'>
+                                        size={28}
+                                        variant="transparent"
+                                        onClick={() => handlers.current?.decrement()}
+                                        //disabled={value === 2}
+                                        className={classes.control}
+                                        onMouseDown={(event) => event.preventDefault()}
+                                    >
+                                        <IconMinus size="1rem" stroke={1.5} />
+                                    </ActionIcon>
+
+                                    <NumberInput
+                                        variant="unstyled"
+                                        min={2}
+                                        max={20}
+                                        handlersRef={handlers}
+                                        value={numOfRhymes}
+                                        onChange={setNumOfRhymes}
+                                        classNames={{ input: classes.input }}
+                                    />
+
+                                    <ActionIcon<'button'>
+                                        size={28}
+                                        variant="transparent"
+                                        onClick={() => handlers.current?.increment()}
+                                        //disabled={value === 20}
+                                        className={classes.control}
+                                        onMouseDown={(event) => event.preventDefault()}
+                                    >
+                                        <IconPlus size="1rem" stroke={1.5} />
+                                    </ActionIcon>
+                                </div>
                                 <Text fw={400}>Keyboard Shortcuts</Text>
                                 <ul style={{ marginTop: '0px' }}>
                                     <li>
@@ -334,3 +369,41 @@ export function UserPanel() {
         </>
     );
 }
+
+//Styles for the numOfRhymes NumberInput
+const useStyles = createStyles((theme) => ({
+    wrapper: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: `${rem(6)} ${theme.spacing.xs}`,
+        borderRadius: theme.radius.sm,
+        border: `${rem(1)} solid ${theme.colorScheme === 'dark' ? 'transparent' : theme.colors.gray[3]
+            }`,
+        backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.white,
+
+        '&:focus-within': {
+            borderColor: theme.colors[theme.primaryColor][6],
+        },
+    },
+
+    control: {
+        backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
+        border: `${rem(1)} solid ${theme.colorScheme === 'dark' ? 'transparent' : theme.colors.gray[3]
+            }`,
+
+        '&:disabled': {
+            borderColor: theme.colorScheme === 'dark' ? 'transparent' : theme.colors.gray[3],
+            opacity: 0.8,
+            backgroundColor: 'transparent',
+        },
+    },
+
+    input: {
+        textAlign: 'center',
+        paddingRight: `${theme.spacing.sm} !important`,
+        paddingLeft: `${theme.spacing.sm} !important`,
+        height: rem(28),
+        flex: 1,
+    },
+}));
