@@ -10,6 +10,7 @@ import { useEditor, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { ModalsProvider, modals } from '@mantine/modals';
 import { Notifications, notifications } from '@mantine/notifications';
+import Placeholder from '@tiptap/extension-placeholder';
 import {
   AppShell,
   Navbar,
@@ -31,11 +32,12 @@ import {
 import { AuthenticationForm } from "./Components/auth.jsx"
 import { auth, db } from './config/firebase'
 import { onAuthStateChanged } from "firebase/auth";
-import { getDocs, collection, setDoc, deleteDoc, doc, query, where, onSnapshot, QuerySnapshot } from 'firebase/firestore'
+import { getDocs, collection, setDoc, deleteDoc, doc, query, where, onSnapshot, QuerySnapshot, addDoc } from 'firebase/firestore'
 import { UnstyledButton } from '@mantine/core';
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { NotFoundPage } from './Pages/404.tsx';
-import { HomePage } from './Pages/Home.tsx'
+import { HomePage } from './Pages/Home.tsx';
+import { v4 } from 'uuid';
 //import songs from `${process.env.PUBLIC_URL}/songs.json`;
 
 import './App.css';
@@ -95,6 +97,7 @@ function MainApp() {
   const [rhymes, setRhymes] = useState({ perfectRhyme: [], nearRhyme: [] });
   const [numOfRhymes, setNumOfRhymes] = useLocalStorage({ key: 'num-of-rhymes', defaultValue: 8 });
   const [isSongListLoaded, setIsSongListLoaded] = useState(false);
+  const [openID, setOpenId] = useState('');
 
   //Accordion Control
   const [accValue, setAccValue] = useState("");
@@ -277,7 +280,7 @@ function MainApp() {
       const unsubscribe = onSnapshot(userSongs, (querySnapshot) => {
         const _songs = [];
         querySnapshot.forEach((doc) => {
-          _songs.push(doc.data());
+          _songs.push({ ...doc.data(), id: doc.id });
         });
         setSongList(_songs);
         setIsSongListLoaded(true);
@@ -307,59 +310,89 @@ function MainApp() {
 
   //For Saving files
   const [isSaved, setIsSaved] = useState(false);
-  const handleSave = async () => {
-    let text = await editor?.getHTML()?.replaceAll('</p><p>', '\n')?.replace('<p>', '')?.replace('</p>', '')?.replaceAll('<h2>', '')?.replaceAll('</h2>', '\n') ?? '';
-    const lines = text.split('\n');
-    const key = lines[0]?.trim();
-    const value = lines?.slice(1).join('\n').trim();
-    const id = uid + "-" + key
-    if (key !== '') {
-      try {
-        await setDoc(doc(db, "Lyrics", id), {
-          title: key,
-          lyrics: value,
-          _uid: uid,
-          _sid: id,
-        });
-        console.log("read")
-        setIsSaved(true);
-        //handleOpen(uid, key, value);
-        /*getSongList();*/
-        notifications.show({
-          title: '"' + key + '" was succesfully saved!',
-          message: 'Well done with this one!',
-          styles: (theme) => ({
-            root: {
-              backgroundColor: theme.colors.white,
-              borderColor: theme.colors.red,
+  //Notification for succesful save
+  const succSave = (key) => {
+    setIsSaved(true);
+    notifications.show({
+      title: '"' + key + '" was succesfully saved!',
+      message: 'Well done with this one!',
+      styles: (theme) => ({
+        root: {
+          backgroundColor: theme.colors.white,
+          borderColor: theme.colors.red,
 
-              '&::before': { backgroundColor: theme.colors.teal[6] },
-            },
-          }),
-        })
-      } catch (err) {
-        //This doesn't work quite the way it should
-        setIsSaved(false)
-        console.log("There was an Error when saving: " + err.code)
-        modals.openContextModal({
-          modal: 'errorSaving',
-          title: 'There was an Error while saving the song',
-          innerProps: {
-            modalBody:
-              'Error: ' + err.code,
-          },
-        })
+          '&::before': { backgroundColor: theme.colors.teal[6] },
+        },
+      }),
+    });
+  }
+  //Notification for unsuccesful save
+  const nonSave = (error) => {
+    setIsSaved(false)
+    console.log("There was an Error when saving: " + error)
+    notifications.show({
+      title: 'Error on Save!!!',
+      message: `Error: ${error}`,
+      styles: (theme) => ({
+        root: {
+          backgroundColor: theme.colors.white,
+          borderColor: theme.colors.red,
+
+          '&::before': { backgroundColor: theme.colors.red[6] },
+        },
+      }),
+    });
+  }
+  //Logic for saving the songs
+  const handleSave = async () => {
+    if (editor.getText !== '') {
+      const regex = /<h2>(.*?)<\/h2>/;
+      const value = editor?.getHTML();
+      const matches = regex.exec(value);
+      const key = matches ? matches[1] : null;
+      if (key === null) {
+        editor?.commands.insertContentAt(0, '<h2>Add a title first</h2>');
+        nonSave('No Title');
+      } else {
+        if (openID !== '') {
+          try {
+            await setDoc(doc(db, "Lyrics", openID), {
+              title: key,
+              lyrics: value,
+              _uid: uid,
+            });
+            succSave(key);
+          } catch (error) {
+            nonSave(error.code);
+            throw error;
+          }
+        } else if (openID === '') {
+          try {
+            const docRef = await addDoc(collection(db, "Lyrics"), {
+              title: key,
+              lyrics: value,
+              _uid: uid,
+            });
+            succSave(key);
+            setOpenId(docRef.id);
+          } catch (error) {
+            nonSave(error.code);
+            throw error;
+          }
+        }
       }
     }
   };
+  /*useEffect(() => {
+    console.log("openID: " + openID)
+  }, [openID]);*/
 
   //OpenFile
-  const handleOpen = (uid, title, lyrics) => {
+  const handleOpen = async (uid, title, lyrics, id) => {
+    await editor.commands.clearContent();
     if (editor.isEditable === true) {
-      editor.commands.setContent('<h2>' + title + '</h2>');
-      editor.commands.enter();
-      let lys = '<p>' + lyrics.replaceAll("\\n", '</p><p>') + '</p>';
-      editor.commands.insertContent(lys);
+      setOpenId(id);
+      editor.commands.insertContent(lyrics);
       setIsSaved(true)
       notifications.show({
         title: '"' + title + '" was opened',
@@ -374,7 +407,6 @@ function MainApp() {
         }),
       });
       setFilterQuery('');
-      /*getSongList();*/
     } else {
       notifications.show({
         title: 'Editor is Locked',
@@ -384,6 +416,7 @@ function MainApp() {
   }
   //Create File
   const handleCreate = () => {
+    setOpenId('');
     editor?.commands.clearContent();
     editor?.commands.insertContent(`<h2>Untitled ${Math.trunc(Math.random() * 100000)}</h2>`);
     editor?.commands.enter();
@@ -407,7 +440,8 @@ function MainApp() {
     notifications.show({
       title: 'Song Deleted',
       message: 'Your song "' + title + '" was succesfully deleted!',
-    })
+    });
+    setOpenId('');
   }
   //Verification Modals
   const openDeleteModal = (sid, title) =>
@@ -444,7 +478,7 @@ function MainApp() {
   const [editable, setEditable] = useState(true);
   const editor = useEditor({
     editable,
-    extensions: [StarterKit],
+    extensions: [StarterKit, Placeholder.configure({ placeholder: 'Click + to create, or open a song' })],
     content: '',
     onSave: (editorContent) => {
       setText(editorContent);
@@ -558,7 +592,7 @@ function MainApp() {
           <Navbar.Section grow component={ScrollArea} mx="-xs" px="xs">
             <Box py="md">
               {filteredSongList.length !== 0 ? filteredSongList.map((song) => (
-                <UnstyledButton key={song._sid}
+                <UnstyledButton key={song.id}
                   sx={(theme) => ({
                     display: 'block',
                     width: '100%',
@@ -576,7 +610,7 @@ function MainApp() {
                   })} onClick={() => {
                     let currentTitle = editor?.getHTML()?.replaceAll('</p><p>', '\n')?.replace('<p>', '')?.replace('</p>', '')?.replaceAll('<h2>', '')?.replaceAll('</h2>', '\n').split('\n')[0].trim();
                     if (isSaved || editor.getText() === '') {
-                      handleOpen(song._uid, song.title, song.lyrics)
+                      handleOpen(song._uid, song.title, song.lyrics, song.id)
                     } else {
                       modals.openConfirmModal({
                         title: 'Are you sure?',
@@ -589,7 +623,7 @@ function MainApp() {
                         labels: { confirm: 'Save', cancel: "Open anyways" },
                         confirmProps: { color: 'teal' },
                         onCancel: () => {
-                          handleOpen(song._uid, song.title, song.lyrics)
+                          handleOpen(song._uid, song.title, song.lyrics, song.id)
                           notifications.show({
                             title: '"' + song.title + '" opened',
                             message: 'Changes to "' + currentTitle + '" not saved',
@@ -605,7 +639,7 @@ function MainApp() {
                         },
                         onConfirm: async () => {
                           await handleSave();
-                          await handleOpen(song._uid, song.title, song.lyrics);
+                          await handleOpen(song._uid, song.title, song.lyrics, song.id);
                           notifications.show({
                             title: '"' + currentTitle + '" saved!',
                             message: '"' + song.title + '" now opened.',
@@ -625,7 +659,7 @@ function MainApp() {
                       onClick={(event) => {
                         event.stopPropagation();
                         if (editor.isEditable) {
-                          openDeleteModal(song._sid, song.title)
+                          openDeleteModal(song.id, song.title)
                         }
                         else {
                           notifications.show({
@@ -945,13 +979,13 @@ function MainApp() {
             {editor && (
               <>
                 <BubbleMenu editor={editor} style={{ display: 'flex' }}>
-                  <Button color="pink" variant="light" compact onClick={() => rhymeF(window.getSelection().toString().trim().split(' ').pop(), 'select')} style={{ marginRight: '0.3rem' }}>
+                  <Button color="pink" variant="filled" compact onClick={() => rhymeF(window.getSelection().toString().trim().split(' ').pop(), 'select')} style={{ marginRight: '0.3rem' }}>
                     Rhymes
                   </Button>
-                  <Button color="pink" variant="light" compact onClick={() => SynF(window.getSelection().toString().trim().split(' ').pop())} style={{ marginRight: '0.3rem' }}>
+                  <Button color="pink" variant="filled" compact onClick={() => SynF(window.getSelection().toString().trim().split(' ').pop())} style={{ marginRight: '0.3rem' }}>
                     Synonims
                   </Button>
-                  <Button color="pink" variant="light" compact onClick={() => DefineF(window.getSelection().toString().trim().split(' ').pop())} style={{ marginRight: '0.3rem' }}>
+                  <Button color="pink" variant="filled" compact onClick={() => DefineF(window.getSelection().toString().trim().split(' ').pop())} style={{ marginRight: '0.3rem' }}>
                     Define
                   </Button>
                 </BubbleMenu>
