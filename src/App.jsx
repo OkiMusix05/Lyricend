@@ -84,6 +84,9 @@ function RoutesManager() {
 }
 
 function MainApp() {
+  //Hotkeys
+  useHotkeys([['mod+Z', () => editor.commands.undo()]]);
+  useHotkeys([['mod+shift+Z', () => editor.commands.redo()]]);
   //App Theme
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const dark = colorScheme === 'dark';
@@ -98,6 +101,9 @@ function MainApp() {
   const [numOfRhymes, setNumOfRhymes] = useLocalStorage({ key: 'num-of-rhymes', defaultValue: 8 });
   const [isSongListLoaded, setIsSongListLoaded] = useState(false);
   const [openID, setOpenId] = useState('');
+
+  //Advanced Settings
+  const [advancedChecked, setAdvancedChecked] = useLocalStorage({ key: 'advanced-settings', defaultValue: false });
 
   //Accordion Control
   const [accValue, setAccValue] = useState("");
@@ -187,39 +193,44 @@ function MainApp() {
     }
   };
 
-  //Synonims Functionality
-  const [synonyms, setSynonyms] = useState([])
-  async function SynF(word) {
+  //Synonims, Antonyms, and Homophones Master Function
+  const [selectedWord, setSelectedWord] = useState('');
+  const [synonyms, setSynonyms] = useState([]);
+  const [antonyms, setAntonyms] = useState([]);
+  const [homophones, setHomophones] = useState([]);
+  async function thesaurusF(word, type) {
     setIsLoading(true);
     setSelectedWord(word.trim().split(" ").pop().replace(/[.,!?]+$/, ''));
     try {
-      const synonymUrl = `https://api.datamuse.com/words?rel_syn=${word.replace(/[.,!?]+$/, '')}`;
-
-      const response = await fetch(synonymUrl);
-
+      const fetchUrl = `https://api.datamuse.com/words?rel_${type}=${word.replace(/[.,!?]+$/, '')}`;
+      const response = await fetch(fetchUrl);
       if (!response.ok) {
         throw new Error('Request failed');
       }
-
       const responseJson = await response.json();
-
-      const synonyms = responseJson.length > 0
+      const list = responseJson.length > 0
         ? responseJson.map(({ word }) => word)
         : ['None Found'];
-
-      setSynonyms(synonyms);
+      if (type === 'syn') {
+        setSynonyms(list);
+      } else if (type === 'ant') {
+        setAntonyms(list);
+      } else if (type === 'hom') {
+        setHomophones(list);
+      }
     } catch (error) {
       console.error('Error:', error);
       setSynonyms(['None found']);
+      setAntonyms(['None found']);
+      setHomophones(['None found']);
     } finally {
       setIsLoading(false);
-      setAccValue('syns');
+      setAccValue(type);
     }
   }
 
   //Dictionary Function
-  const [defList, setDefState] = useState([])
-  const [selectedWord, setSelectedWord] = useState('');
+  const [defList, setDefState] = useState([]);
   async function DefineF(word) {
     setIsLoading(true);
     setSelectedWord(word.trim().split(" ").pop().replace(/[.,!?]+$/, ''));
@@ -245,6 +256,7 @@ function MainApp() {
       setAccValue('def')
     }
   }
+
   //Authentication
   const [isSigned, setIsSigned] = useState(false);
   const [uid, setUID] = useState('');
@@ -464,22 +476,10 @@ function MainApp() {
       },
       onConfirm: () => handleDelete(sid, title),
     });
-
-  //Clear something idk, this function was made by ChatGPT and it works so i leave it
-  /*const handleClear = () => {
-    setText('');
-    setWords([]);
-    setRhymes({ currentLine: [], previousLine: [] });
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-  }*/
-  //For the accordion
-  //const [value, setValue] = useState <Mant string | null > (null);
   const [editable, setEditable] = useState(true);
   const editor = useEditor({
     editable,
-    extensions: [StarterKit, Placeholder.configure({ placeholder: 'Click + to create, or open a song' })],
+    extensions: [StarterKit, Placeholder.configure({ placeholder: 'Click + to create, or open a song' }), History],
     content: '',
     onSave: (editorContent) => {
       setText(editorContent);
@@ -751,7 +751,7 @@ function MainApp() {
               placeholder="Search in your songs..."
               dropdownPosition="top"
             />
-            <isSavedCtx.Provider value={{ isSaved, setIsSaved, editor, numOfRhymes, setNumOfRhymes }}>
+            <isSavedCtx.Provider value={{ isSaved, setIsSaved, editor, numOfRhymes, setNumOfRhymes, advancedChecked, setAdvancedChecked }}>
               <UserPanel />
             </isSavedCtx.Provider>
           </Navbar.Section>
@@ -931,7 +931,7 @@ function MainApp() {
                   </Accordion.Panel>
                 </Accordion.Item>
 
-                <Accordion.Item value="syns">
+                <Accordion.Item value="syn">
                   <Accordion.Control>
                     <Text>Synonyms</Text>
                   </Accordion.Control>
@@ -962,6 +962,74 @@ function MainApp() {
                     )}
                   </Accordion.Panel>
                 </Accordion.Item>
+                {advancedChecked ? (
+                  <>
+                    <Accordion.Item value="ant">
+                      <Accordion.Control>
+                        <Text>Antonyms</Text>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        {antonyms.length > 0 ? (
+                          <>
+                            <Text fw={600} >{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
+                            <ul style={{ paddingLeft: '1.5rem' }}>
+                              {antonyms.slice(0, numOfRhymes).map((antonym, index) => (
+                                <li key={index}>
+                                  {antonym === 'None Found' ? (
+                                    <Text >{antonym}</Text>
+                                  ) : (
+                                    <UnstyledButton
+                                      type="button"
+                                      onClick={() => DefineF(antonym)}
+                                      style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                                    >
+                                      {antonym}
+                                    </UnstyledButton>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : (
+                          <Text >Select a word from the editor to search for antonyms</Text>
+                        )}
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                    <Accordion.Item value="hom">
+                      <Accordion.Control>
+                        <Text>Homophones</Text>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        {homophones.length > 0 ? (
+                          <>
+                            <Text fw={600} >{selectedWord.charAt(0).toUpperCase() + selectedWord.slice(1)}:</Text>
+                            <ul style={{ paddingLeft: '1.5rem' }}>
+                              {homophones.slice(0, numOfRhymes).map((homophone, index) => (
+                                <li key={index}>
+                                  {homophone === 'None Found' ? (
+                                    <Text >{homophone}</Text>
+                                  ) : (
+                                    <UnstyledButton
+                                      type="button"
+                                      onClick={() => DefineF(homophone)}
+                                      style={{ border: 'none', background: 'none', cursor: 'pointer' }}
+                                    >
+                                      {homophone}
+                                    </UnstyledButton>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : (
+                          <Text >Select a word from the editor to search for homophones</Text>
+                        )}
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  </>
+                ) : (
+                  <></>
+                )}
 
               </Accordion>
             </Box>
@@ -983,9 +1051,21 @@ function MainApp() {
                   <Button color="pink" variant="filled" compact onClick={() => rhymeF(window.getSelection().toString().trim().split(' ').pop(), 'select')} style={{ marginRight: '0.3rem' }}>
                     Rhymes
                   </Button>
-                  <Button color="pink" variant="filled" compact onClick={() => SynF(window.getSelection().toString().trim().split(' ').pop())} style={{ marginRight: '0.3rem' }}>
+                  <Button color="pink" variant="filled" compact onClick={() => thesaurusF(window.getSelection().toString().trim().split(' ').pop(), 'syn')} style={{ marginRight: '0.3rem' }}>
                     Synonims
                   </Button>
+                  {advancedChecked ? (
+                    <>
+                      <Button color="pink" variant="filled" compact onClick={() => thesaurusF(window.getSelection().toString().trim().split(' ').pop(), 'ant')} style={{ marginRight: '0.3rem' }}>
+                        Antonyms
+                      </Button>
+                      <Button color="pink" variant="filled" compact onClick={() => thesaurusF(window.getSelection().toString().trim().split(' ').pop(), 'hom')} style={{ marginRight: '0.3rem' }}>
+                        Homophones
+                      </Button>
+                    </>
+                  ) : (
+                    <></>
+                  )}
                   <Button color="pink" variant="filled" compact onClick={() => DefineF(window.getSelection().toString().trim().split(' ').pop())} style={{ marginRight: '0.3rem' }}>
                     Define
                   </Button>

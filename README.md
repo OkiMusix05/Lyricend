@@ -17,3 +17,4 @@ This project is still in alpha and it's not open source.
 - v0.293: The Fixes; with build
 - v0.31: Ability to change titles without creating a new song, bug fixes, and Format on save; No build
 - v0.32: Prettier numOfRhymes changer; With Build
+- v0.33: Advanced Tools, undo/redo, profile logging in db; with Build

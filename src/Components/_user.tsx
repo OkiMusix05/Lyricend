@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useContext, createContext, useRef } from 'react';
 import { IconChevronRight, IconChevronLeft, IconAt, IconArrowRight, IconCheck, IconUpload, IconPhoto, IconX, IconMinus, IconPlus } from '@tabler/icons-react';
-import { UnstyledButton, Group, Avatar, Text, Box, useMantineTheme, rem, Button, Skeleton, Grid, ActionIcon, Flex, Image, Kbd, LoadingOverlay, NumberInput, createStyles } from '@mantine/core';
+import { UnstyledButton, Group, Avatar, Text, Box, useMantineTheme, rem, Button, Skeleton, Grid, ActionIcon, Flex, Image, Kbd, LoadingOverlay, NumberInput, createStyles, Checkbox, Indicator } from '@mantine/core';
 import { auth, storage } from '../config/firebase';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged, updateProfile } from "firebase/auth";
@@ -28,7 +28,7 @@ export function UserPanel() {
             isSigned = false
         }
     });*/
-    const { isSaved, editor, numOfRhymes, setNumOfRhymes } = useContext(isSavedCtx);
+    const { isSaved, editor, numOfRhymes, setNumOfRhymes, advancedChecked, setAdvancedChecked } = useContext(isSavedCtx);
     const [isSigned, setIsSigned] = useState(false);
     const [displayName, setDP] = useState('');
     const [userEmail, setUE] = useState('');
@@ -189,6 +189,9 @@ export function UserPanel() {
             });
         }
     }
+    useEffect(() => {
+        console.log(advancedChecked);
+    }, [advancedChecked]);
 
     return (
         <>
@@ -219,10 +222,14 @@ export function UserPanel() {
                         }}
                     >
                         <Group>
-                            {isLoading ? (<Skeleton height="2rem" circle mb="xl" />) : (<Avatar
-                                src={isSigned ? pfp : ''}
-                                radius="xl"
-                            />)}
+                            {isLoading ? (<Skeleton height="2rem" circle mb="xl" />) : (
+                                <Indicator color="grape" size={14} withBorder inline offset={3} {...(!advancedChecked ? { disabled: true } : null)}>
+                                    <Avatar
+                                        src={isSigned ? pfp : ''}
+                                        radius="xl"
+                                    />
+                                </Indicator>
+                            )}
                             <Box sx={{ flex: 1 }}>
                                 {isLoading ? (<><Skeleton height="0.5rem" width="100%" /></>) : (<><Text size="sm" weight={500}>
                                     {isSigned ? displayName : "No User"}
@@ -362,7 +369,13 @@ export function UserPanel() {
                                         </Dropzone.Idle>
                                     </Group>
                                 </Dropzone>
-                                <Button size="xs" color="blue" radius="sm" fullWidth onClick={uploadImage}>Upload</Button>
+                                <Button size="xs" color="blue" radius="sm" fullWidth onClick={uploadImage} style={{ marginBottom: '1rem' }}>Upload</Button>
+                                <Text fw={400} style={{ marginBottom: '0.2rem' }}>Premium Settings</Text>
+                                <Checkbox
+                                    label="Advanced Tools"
+                                    checked={advancedChecked}
+                                    onChange={(event) => setAdvancedChecked(event.currentTarget.checked)}
+                                />
                             </Grid.Col>
                         </Grid>
                     </Box></Paper></Modal>

@@ -2,8 +2,9 @@ import React from 'react';
 import { useToggle, upperFirst } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 import { IconBrandGoogle, IconBrandTwitter } from '@tabler/icons-react';
-import { auth, googleProvider, twitterProvider } from '../config/firebase'
-import { createUserWithEmailAndPassword, signInWithPopup, TwitterAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, getAdditionalUserInfo } from 'firebase/auth'
+import { auth, googleProvider, twitterProvider, db } from '../config/firebase'
+import { createUserWithEmailAndPassword, signInWithPopup, TwitterAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, updateProfile, getAdditionalUserInfo } from 'firebase/auth';
+import { collection, addDoc, setDoc, doc } from 'firebase/firestore';
 import {
     TextInput,
     PasswordInput,
@@ -59,7 +60,14 @@ export function AuthenticationForm(props) {
     //Sign in with Google Function
     const signInWithGoogle = async () => {
         try {
-            await signInWithPopup(auth, googleProvider);
+            const userCredentials = await signInWithPopup(auth, googleProvider);
+            setDoc(doc(db, "users", userCredentials.user.uid), {
+                _uid: userCredentials.user.uid,
+                email: userCredentials.user.email,
+                displayName: userCredentials.user.displayName,
+                provider: userCredentials.user.providerData[0].providerId,
+                // photoURL: userCredentials.user.photoURL,
+            });
             await succsesfullySignedIn();
         } catch (err) {
             console.error(err)
@@ -67,7 +75,7 @@ export function AuthenticationForm(props) {
     }
     //Sign in with Twitter - Needs app to be deployed to a url and Firebase tweaks to work
     const signInWithTwitter = async () => {
-        signInWithPopup(auth, twitterProvider).then((result) => {
+        const userCredentials = await signInWithPopup(auth, twitterProvider).then((result) => {
             // This gives you a the Twitter OAuth 1.0 Access Token and Secret.
             // You can use these server side with your app's credentials to access the Twitter API.
             //const credential = TwitterAuthProvider.credentialFromResult(result);
@@ -90,12 +98,27 @@ export function AuthenticationForm(props) {
             //const credential = TwitterAuthProvider.credentialFromError(error);
             // ...
         });
+        setDoc(doc(db, "users", userCredentials.user.uid), {
+            _uid: userCredentials.user.uid,
+            email: userCredentials.user.email,
+            displayName: userCredentials.user.displayName,
+            provider: userCredentials.user.providerData[0].providerId,
+            // photoURL: userCredentials.user.photoURL,
+        });
     }
     //Regular email sign-in
     const signIn = async (values) => {
         if (type === 'register') {
             try {
-                await createUserWithEmailAndPassword(auth, values['email'], pwdValue).then(() => updateProfile(auth.currentUser, { displayName: values['name'] }));
+                await createUserWithEmailAndPassword(auth, values['email'], pwdValue).then((userCredentials) => {
+                    updateProfile(auth.currentUser, { displayName: values['name'] });
+                    setDoc(doc(db, "users", userCredentials.user.uid), {
+                        _uid: userCredentials.user.uid,
+                        email: userCredentials.user.email,
+                        displayName: values['name'],
+                        provider: userCredentials.user.providerData[0].providerId,
+                    });
+                });
                 succsesfullySignedIn();
             } catch (error) {
                 switch (error.code) {
