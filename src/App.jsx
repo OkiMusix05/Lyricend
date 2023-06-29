@@ -4,13 +4,14 @@ import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, re
 import { useLocalStorage, useHotkeys, useColorScheme } from '@mantine/hooks';
 import { UserPanel } from './Components/_user.tsx';
 //import { SearchSongInput } from './Components/_songSearch.tsx';
-import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon, IconFileUnknown } from '@tabler/icons-react';
+import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon, IconFileUnknown, IconHighlight } from '@tabler/icons-react';
 import { RichTextEditor } from '@mantine/tiptap';
 import { useEditor, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { ModalsProvider, modals } from '@mantine/modals';
 import { Notifications, notifications } from '@mantine/notifications';
 import Placeholder from '@tiptap/extension-placeholder';
+import Highlight from '@tiptap/extension-highlight';
 import {
   AppShell,
   Navbar,
@@ -27,7 +28,8 @@ import {
   Tooltip,
   Button,
   Textarea,
-  Input
+  Input,
+  Mark
 } from '@mantine/core';
 import { AuthenticationForm } from "./Components/auth.jsx"
 import { auth, db } from './config/firebase'
@@ -38,7 +40,6 @@ import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { NotFoundPage } from './Pages/404.tsx';
 import { HomePage } from './Pages/Home.tsx';
 import { v4 } from 'uuid';
-//import songs from `${process.env.PUBLIC_URL}/songs.json`;
 
 import './App.css';
 //import { isEditable } from '@testing-library/user-event/dist/utils/index.js';
@@ -108,6 +109,107 @@ function MainApp() {
   //Accordion Control
   const [accValue, setAccValue] = useState("");
 
+  //Highliting Functionality
+  const [alreadySearched, setAlreadySearched] = useState([]);
+  const [apiCounter, setApiCounter] = useState(0);
+  const [rhymesArray, setRhymesArray] = useState([]);
+  const [colorArray, setColorArray] = useState([]);
+  var colors = ['#FFA8A8', '#FAA2C1', '#E599F7', '#9775FA', '#748FFC', '#4DABF7', '#3BC9DB', '#38D9A9', '#69DB7C', '#A9E34B', '#FFD43B', '#FFA94D'];
+  const highlighterF = async (text, html) => {
+    setIsLoading(true);
+    let title = /<h2>(.*?)<\/h2>/g.exec(html)[1];
+    var _text = text.replace(/\s*\n\s*/g, ' ').replace(title, '');
+    const words = _text.replace(/[.?!,_\-:;]/g, '').toLowerCase().split(' ');
+    var localAlreadySearched = [...alreadySearched]; // Store updated state value
+    var localRhymesArray = [...rhymesArray];
+    var localApiCounter = apiCounter;
+    var localColorArray = [...colorArray];
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i].replace(/[.,!?_\-:;]/, '');
+      let wordSet = [];
+
+      if (
+        !localAlreadySearched.includes(word) &&
+        word.length > 1 &&
+        word.toLowerCase() !== 'the' &&
+        word.toLowerCase() !== 'verse' &&
+        word.toLowerCase() !== 'pre' &&
+        word.toLowerCase() !== 'chorus' &&
+        word.toLowerCase() !== 'bridge'
+      ) {
+        try {
+          let breakFlag = false;
+          const rhymeUrl = `https://api.datamuse.com/words?rel_rhy=${word}`;
+          const response = await fetch(rhymeUrl);
+          const responseJson = await response.json();
+          const apiWordList = responseJson.map(({ word }) => word);
+          wordSet.push(word);
+          localAlreadySearched.push(word);
+
+          for (let j = 0; j < apiWordList.length; j++) {
+            const apiWord = apiWordList[j].toLowerCase();
+            if (words.includes(apiWord)) {
+              wordSet.push(apiWord);
+              for (let k = 0; k < localRhymesArray.length; k++) {
+                if (localRhymesArray[k].includes(apiWord)) {
+                  localRhymesArray[k].push(word);
+                  breakFlag = true;
+                  wordSet = [];
+                  break;
+                }
+              }
+              if (!localAlreadySearched.includes(apiWord)) {
+                localAlreadySearched.push(apiWord);
+              }
+              if (breakFlag) {
+                break
+              }
+            }
+          }
+
+          if (wordSet.length > 1) {
+            localRhymesArray.push(wordSet);
+          }
+
+          localApiCounter += 1;
+        } catch {
+          throw new Error('ERROR!!');
+        }
+      }
+    }
+    var opacity = dark ? '40' : '59'; //Makes the color be 25% opacity if dark theme and 35% opacity if light theme
+    for (let i = 0; i < localRhymesArray.length; i++) {
+      if (localRhymesArray.length > localColorArray.length) {
+        var color = colors.splice(Math.floor(Math.random() * (colors.length)), 1);
+        localColorArray.push(color[0]);
+      }
+      for (let j = 0; j < localRhymesArray[i].length; j++) {
+        var index = html.toLowerCase().indexOf(localRhymesArray[i][j].toLowerCase());
+        var postIndex = index + localRhymesArray[i][j].length;
+        var replaceWord = html.slice(index, postIndex);
+        //console.log(index + " : " + postIndex);
+        var output = html.replaceAll(RegExp("\\b" + replaceWord + "\\b", "g"), `<mark style="background-color: ${localColorArray[i] + opacity}">${replaceWord}</mark>`);
+        html = output;
+      }
+    }
+    setRhymesArray(localRhymesArray);
+    setApiCounter(localApiCounter);
+    setAlreadySearched(localAlreadySearched);
+    editor?.commands.clearContent();
+    editor?.commands.insertContent(html);
+    setColorArray(localColorArray);
+    setIsLoading(false);
+  };
+  /*useEffect(() => {
+    console.log("Logs:");
+    console.log(rhymesArray);
+    console.log(alreadySearched);
+    console.log(colorArray);
+  }, [rhymesArray, alreadySearched, colorArray]);*/
+  useEffect(() => {
+    console.log(apiCounter);
+  }, [apiCounter]);
   //Master Rhyme Function - There used to be 2 functions but now it's just one with the common logic
   const rhymeF = async (word, where) => {
     let look;
@@ -362,6 +464,9 @@ function MainApp() {
       const value = editor?.getHTML();
       const matches = regex.exec(value);
       const key = matches ? matches[1] : null;
+      const rhymes = rhymesArray.map(function (subArray) {
+        return subArray.join(';');
+      });
       if (key === null) {
         editor?.commands.insertContentAt(0, '<h2>Add a title first</h2>');
         nonSave('No Title');
@@ -373,6 +478,9 @@ function MainApp() {
               title: key,
               lyrics: value,
               _uid: uid,
+              _rhymesArray: rhymes,
+              _alreadySearched: alreadySearched,
+              _colorArray: colorArray,
             });
             succSave(key);
           } catch (error) {
@@ -385,6 +493,9 @@ function MainApp() {
               title: key,
               lyrics: value,
               _uid: uid,
+              _rhymesArray: rhymes,
+              _alreadySearched: alreadySearched,
+              _colorArray: colorArray,
             });
             succSave(key);
             setOpenId(docRef.id);
@@ -401,12 +512,19 @@ function MainApp() {
   }, [openID]);*/
 
   //OpenFile
-  const handleOpen = async (uid, title, lyrics, id) => {
+  const handleOpen = async (uid, title, lyrics, id, rhymes, searched, colors) => {
     await editor.commands.clearContent();
+    const rArray = rhymes.map(function (subArray) {
+      return subArray.split(';');
+    });
+    setRhymesArray(rArray);
+    setAlreadySearched(searched);
+    setColorArray(colors);
+    setApiCounter(0);
     if (editor.isEditable === true) {
       setOpenId(id);
       editor.commands.insertContent(lyrics);
-      setIsSaved(true)
+      setIsSaved(true);
       notifications.show({
         title: '"' + title + '" was opened',
         message: 'Good luck!',
@@ -434,6 +552,10 @@ function MainApp() {
     editor?.commands.insertContent(`<h2>Untitled ${Math.trunc(Math.random() * 100000)}</h2>`);
     editor?.commands.enter();
     editor?.commands.focus();
+    setRhymesArray([]);
+    setApiCounter(0);
+    setAlreadySearched([]);
+    setColorArray([]);
     notifications.show({
       title: 'New song created!',
       message: 'Good Luck!',
@@ -455,6 +577,10 @@ function MainApp() {
       message: 'Your song "' + title + '" was succesfully deleted!',
     });
     setOpenId('');
+    setRhymesArray([]);
+    setApiCounter(0);
+    setAlreadySearched([]);
+    setColorArray([]);
   }
   //Verification Modals
   const openDeleteModal = (sid, title) =>
@@ -479,15 +605,16 @@ function MainApp() {
   const [editable, setEditable] = useState(true);
   const editor = useEditor({
     editable,
-    extensions: [StarterKit, Placeholder.configure({ placeholder: 'Click + to create, or open a song' }), History],
+    extensions: [StarterKit, Placeholder.configure({ placeholder: 'Click + to create, or open a song' }), History, Highlight.configure({ multicolor: true })],
     content: '',
     onSave: (editorContent) => {
       setText(editorContent);
     },
     onUpdate: ({ editor }) => {
       setIsSaved(false);
-      let html = editor.getHTML()
-      let apiText = html.replaceAll('</p><p>', '\n').replace('<p>', '').replace('</p>', '')
+      let html = editor.getHTML();
+      //let apiText = html.replaceAll('</p><p>', '\n').replace('<p>', '').replace('</p>', '')
+      let apiText = editor.getText();
       // send the content to an API here
       if (apiText !== '') {
         if (timerRef.current) {
@@ -611,7 +738,7 @@ function MainApp() {
                   })} onClick={() => {
                     let currentTitle = editor?.getHTML()?.replaceAll('</p><p>', '\n')?.replace('<p>', '')?.replace('</p>', '')?.replaceAll('<h2>', '')?.replaceAll('</h2>', '\n').split('\n')[0].trim();
                     if (isSaved || editor.getText() === '') {
-                      handleOpen(song._uid, song.title, song.lyrics, song.id)
+                      handleOpen(song._uid, song.title, song.lyrics, song.id, song._rhymesArray, song._alreadySearched, song._colorArray);
                     } else {
                       modals.openConfirmModal({
                         title: 'Are you sure?',
@@ -624,7 +751,7 @@ function MainApp() {
                         labels: { confirm: 'Save', cancel: "Open anyways" },
                         confirmProps: { color: 'teal' },
                         onCancel: () => {
-                          handleOpen(song._uid, song.title, song.lyrics, song.id)
+                          handleOpen(song._uid, song.title, song.lyrics, song.id, song._rhymesArray, song._alreadySearched, song._colorArray);
                           notifications.show({
                             title: '"' + song.title + '" opened',
                             message: 'Changes to "' + currentTitle + '" not saved',
@@ -640,7 +767,7 @@ function MainApp() {
                         },
                         onConfirm: async () => {
                           await handleSave();
-                          await handleOpen(song._uid, song.title, song.lyrics, song.id);
+                          await handleOpen(song._uid, song.title, song.lyrics, song.id, song._rhymesArray, song._alreadySearched, song._colorArray);
                           notifications.show({
                             title: '"' + currentTitle + '" saved!',
                             message: '"' + song.title + '" now opened.',
@@ -774,6 +901,16 @@ function MainApp() {
               <Group position="apart">
                 <Title order={3} >Tools {isLoading && <Loader color="pink" variant="dots" size="sm" />}{' '}</Title>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <Tooltip label="Highlight" color="blue" withArrow position="bottom" openDelay={1000}>
+                    <ActionIcon
+                      variant="default"
+                      onClick={() => highlighterF(editor.getText(), editor.getHTML())}
+                      title="Toggle color scheme"
+                      style={{ marginRight: '0.5rem' }}
+                    >
+                      <IconHighlight size="1.1rem" />
+                    </ActionIcon>
+                  </Tooltip>
                   <Tooltip label={editor.isEditable ? 'Lock' : 'Unlock'} color="blue" withArrow position="bottom" openDelay={1000}>
                     <ActionIcon
                       variant="default"
@@ -1095,6 +1232,12 @@ function MainApp() {
                       title="Bridge"
                     >
                       <Text size="0.6rem">bridge</Text>
+                    </RichTextEditor.Control>
+                    <RichTextEditor.Control
+                      onClick={() => { editor?.commands.insertContent('<mark>mark</mark>'); editor?.commands.enter(); editor?.commands.focus(); }}
+                      title="Bridge"
+                    >
+                      <Text size="0.6rem">mark</Text>
                     </RichTextEditor.Control>
                   </RichTextEditor.ControlsGroup>
                 </FloatingMenu>
