@@ -4,7 +4,7 @@ import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, re
 import { useLocalStorage, useHotkeys, useColorScheme } from '@mantine/hooks';
 import { UserPanel } from './Components/_user.tsx';
 //import { SearchSongInput } from './Components/_songSearch.tsx';
-import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon, IconFileUnknown, IconHighlight } from '@tabler/icons-react';
+import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon, IconFileUnknown, IconHighlight, IconPrinter } from '@tabler/icons-react';
 import { RichTextEditor } from '@mantine/tiptap';
 import { useEditor, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -38,6 +38,7 @@ import { getDocs, collection, setDoc, deleteDoc, doc, query, where, onSnapshot, 
 import { UnstyledButton } from '@mantine/core';
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { NotFoundPage } from './Pages/404.tsx';
+import jsPDF from 'jspdf';
 import { HomePage } from './Pages/Home.tsx';
 import { v4 } from 'uuid';
 
@@ -88,6 +89,19 @@ function MainApp() {
   //Hotkeys
   useHotkeys([['mod+Z', () => editor.commands.undo()]]);
   useHotkeys([['mod+shift+Z', () => editor.commands.redo()]]);
+  useHotkeys([['mod+shift+H', () => { toggleHighlights() }]]);
+  const toggleHighlights = () => {
+    let html = editor.getHTML();
+
+    if (html.includes('</mark>')) {
+      let newHtml = html.replace(/<mark[^>]*>/g, '').replace(/<\/mark>/g, '');
+      editor.commands.clearContent();
+      editor.commands.setContent(newHtml);
+    } else {
+      highlighterF(editor.getText(), html);
+    }
+  }
+
   //App Theme
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const dark = colorScheme === 'dark';
@@ -102,6 +116,66 @@ function MainApp() {
   const [numOfRhymes, setNumOfRhymes] = useLocalStorage({ key: 'num-of-rhymes', defaultValue: 8 });
   const [isSongListLoaded, setIsSongListLoaded] = useState(false);
   const [openID, setOpenId] = useState('');
+
+  //Change RGBA colors to RGB as if it was displayed against a white background function
+  function convertRGBAtoRGB(rgbaColor) {
+    const colorValues = rgbaColor.replace(/\s+/g, '').substring(5).slice(0, -1);
+    const [red, green, blue, alpha] = colorValues.split(',');
+
+    const rgbRed = Math.round((1 - alpha) * 255 + alpha * parseInt(red.trim()));
+    const rgbGreen = Math.round((1 - alpha) * 255 + alpha * parseInt(green.trim()));
+    const rgbBlue = Math.round((1 - alpha) * 255 + alpha * parseInt(blue.trim()));
+
+    return `rgb(${rgbRed}, ${rgbGreen}, ${rgbBlue})`;
+  }
+  //Generate PDF from the lyrics in the editor
+  const generatePDF = () => {
+    const pdf = new jsPDF();
+    const html = editor.getHTML();
+    var title = /<h2>(.*?)<\/h2>/g.exec(html)[1];
+    var _username = auth.currentUser.displayName;
+    //Handles all the styling for the pdf - Force the text to black and align center
+    const pdfHtml = html
+      .replace( //Adds a subtitle with the username
+        /<h2>(.*?)<\/h2>/g,
+        `<h2 style="color: black; text-align: center;">$1</h2><p style="color: #999; text-align: right; margin-top: -1.5rem;">${'@' + _username}</p>`
+      )
+      .replace(/<h3>/g, '<h3 style="color: black; text-align: center;">')
+      .replace(/<p>/g, '<p style="color: black; text-align: center;">')
+      .replace( //Fixes the highlighter colors in the pdf
+        /<mark([^>]*)style="([^"]*)background-color:\s*(rgba?\([^"]*\));?([^"]*)">(.*?)<\/mark>/g,
+        (_, tagAttrs, styleAttrs, rgbaColor, remainingAttrs, content) => {
+          const rgbColor = convertRGBAtoRGB(rgbaColor);
+          const newStyleAttrs = `${styleAttrs}background-color: ${rgbColor}; color: black;${remainingAttrs}`;
+          return `<mark${tagAttrs}style="${newStyleAttrs}">${content}</mark>`;
+        }
+      );
+
+    // Add watermark as footer
+    const watermarkFontSize = 10; // Watermark font size
+    const watermarkTextWidth = pdf.getStringUnitWidth("Made with Lyrciend ©") * watermarkFontSize / pdf.internal.scaleFactor;
+    const margin = 15; // Margin between watermark and content
+    const pageCount = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      pdf.setPage(i);
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const watermarkY = pageHeight - 10;
+      pdf.setTextColor('#888');
+      pdf.setFontSize(watermarkFontSize);
+      pdf.text("Made with Lyrciend ©", margin, watermarkY, { align: "left", maxWidth: pdf.internal.pageSize.getWidth() - margin - watermarkTextWidth });
+    }
+
+    pdf.html(pdfHtml, {
+      callback: function (pdf) {
+        // Save the PDF
+        pdf.save(title);
+      },
+      x: 15,
+      y: 15,
+      width: 170,
+      windowWidth: 650
+    });
+  }
 
   //Advanced Settings
   const [advancedChecked, setAdvancedChecked] = useLocalStorage({ key: 'advanced-settings', defaultValue: false });
@@ -201,12 +275,6 @@ function MainApp() {
     setColorArray(localColorArray);
     setIsLoading(false);
   };
-  /*useEffect(() => {
-    console.log("Logs:");
-    console.log(rhymesArray);
-    console.log(alreadySearched);
-    console.log(colorArray);
-  }, [rhymesArray, alreadySearched, colorArray]);*/
   useEffect(() => {
     console.log(apiCounter);
   }, [apiCounter]);
@@ -678,6 +746,9 @@ function MainApp() {
               <Group position="apart">
                 <Title order={3}>Projects</Title>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <Tooltip label="Get PDF" color='blue' withArrow position="bottom" openDelay={1000}>
+                    <ActionIcon variant='default' onClick={() => generatePDF(editor.getHTML())} style={{ marginRight: '0.5rem' }} size={30}><IconPrinter size="1rem" /></ActionIcon>
+                  </Tooltip>
                   <Tooltip label="New Song" color='blue' withArrow position="bottom" openDelay={1000}>
                     <ActionIcon variant="default" onClick={() => {
                       if (editor.getText() === '' || isSaved) {

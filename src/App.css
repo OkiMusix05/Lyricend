@@ -27,6 +27,18 @@
   cursor: not-allowed;
 }
 
+:root {
+  --mark-background: 1;
+}
+
+mark {
+  border-radius: 0.20em;
+  box-decoration-break: clone;
+  padding: 0.1rem 0.1rem;
+  opacity: var(--mark-background);
+  background-color: null;
+}
+
 /*ul li::before {
   content: "\2022";
   color: red;
