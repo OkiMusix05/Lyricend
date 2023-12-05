@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import { useState, useRef, useEffect, createContext, useContext } from 'react';
-import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, rem, useMantineTheme, Skeleton } from '@mantine/core';
+import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, rem, useMantineTheme, Skeleton, Container, Overlay, CloseButton } from '@mantine/core';
 import { useLocalStorage, useHotkeys, useColorScheme } from '@mantine/hooks';
 import { UserPanel } from './Components/_user.tsx';
 //import { SearchSongInput } from './Components/_songSearch.tsx';
-import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon, IconFileUnknown, IconHighlight, IconPrinter } from '@tabler/icons-react';
+import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon, IconFileUnknown, IconHighlight, IconHighlightOff, IconPrinter } from '@tabler/icons-react';
 import { RichTextEditor } from '@mantine/tiptap';
 import { useEditor, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -110,12 +110,15 @@ function MainApp() {
   //For the Rhyming Functionality
   const [words, setWords] = useState([]);
   const [text, setText] = useState('');
+  const [syllableList, setSyllableList] = useState([]);
   const timerRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [rhymes, setRhymes] = useState({ perfectRhyme: [], nearRhyme: [] });
   const [numOfRhymes, setNumOfRhymes] = useLocalStorage({ key: 'num-of-rhymes', defaultValue: 8 });
   const [isSongListLoaded, setIsSongListLoaded] = useState(false);
   const [openID, setOpenId] = useState('');
+  // Key presses
+  const [isShift, setIsShift] = useState(false);
 
   //Change RGBA colors to RGB as if it was displayed against a white background function
   function convertRGBAtoRGB(rgbaColor) {
@@ -183,97 +186,105 @@ function MainApp() {
   //Accordion Control
   const [accValue, setAccValue] = useState("");
 
-  //Highliting Functionality
+  // Highliting Functionality
   const [alreadySearched, setAlreadySearched] = useState([]);
   const [apiCounter, setApiCounter] = useState(0);
   const [rhymesArray, setRhymesArray] = useState([]);
   const [colorArray, setColorArray] = useState([]);
   var colors = ['#FFA8A8', '#FAA2C1', '#E599F7', '#9775FA', '#748FFC', '#4DABF7', '#3BC9DB', '#38D9A9', '#69DB7C', '#A9E34B', '#FFD43B', '#FFA94D'];
   const highlighterF = async (text, html) => {
-    setIsLoading(true);
-    let title = /<h2>(.*?)<\/h2>/g.exec(html)[1];
-    var _text = text.replace(/\s*\n\s*/g, ' ').replace(title, '');
-    const words = _text.replace(/[.?!,_\-:;]/g, '').toLowerCase().split(' ');
-    var localAlreadySearched = [...alreadySearched]; // Store updated state value
-    var localRhymesArray = [...rhymesArray];
-    var localApiCounter = apiCounter;
-    var localColorArray = [...colorArray];
-
-    for (let i = 0; i < words.length; i++) {
-      const word = words[i].replace(/[.,!?_\-:;]/, '');
-      let wordSet = [];
-
-      if (
-        !localAlreadySearched.includes(word) &&
-        word.length > 1 &&
-        word.toLowerCase() !== 'the' &&
-        word.toLowerCase() !== 'verse' &&
-        word.toLowerCase() !== 'pre' &&
-        word.toLowerCase() !== 'chorus' &&
-        word.toLowerCase() !== 'bridge'
-      ) {
-        try {
-          let breakFlag = false;
-          const rhymeUrl = `https://api.datamuse.com/words?rel_rhy=${word}`;
-          const response = await fetch(rhymeUrl);
-          const responseJson = await response.json();
-          const apiWordList = responseJson.map(({ word }) => word);
-          wordSet.push(word);
-          localAlreadySearched.push(word);
-
-          for (let j = 0; j < apiWordList.length; j++) {
-            const apiWord = apiWordList[j].toLowerCase();
-            if (words.includes(apiWord)) {
-              wordSet.push(apiWord);
-              for (let k = 0; k < localRhymesArray.length; k++) {
-                if (localRhymesArray[k].includes(apiWord)) {
-                  localRhymesArray[k].push(word);
-                  breakFlag = true;
-                  wordSet = [];
-                  break;
+    if(!isShift) { // That is, normally
+      setIsLoading(true);
+      let title = /<h2>(.*?)<\/h2>/g.exec(html)[1];
+      var _text = text.replace(/\s*\n\s*/g, ' ').replace(title, '');
+      const words = _text.replace(/[.?!,_\-:;]/g, '').toLowerCase().split(' ');
+      var localAlreadySearched = [...alreadySearched]; // Store updated state value
+      var localRhymesArray = [...rhymesArray];
+      var localApiCounter = apiCounter;
+      var localColorArray = [...colorArray];
+  
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i].replace(/[.,!?_\-:;]/, '');
+        let wordSet = [];
+  
+        if (
+          !localAlreadySearched.includes(word) &&
+          word.length > 1 &&
+          word.toLowerCase() !== 'the' &&
+          word.toLowerCase() !== 'verse' &&
+          word.toLowerCase() !== 'pre' &&
+          word.toLowerCase() !== 'chorus' &&
+          word.toLowerCase() !== 'bridge'
+        ) {
+          try {
+            let breakFlag = false;
+            const rhymeUrl = `https://api.datamuse.com/words?rel_rhy=${word}`;
+            const response = await fetch(rhymeUrl);
+            const responseJson = await response.json();
+            const apiWordList = responseJson.map(({ word }) => word);
+            wordSet.push(word);
+            localAlreadySearched.push(word);
+  
+            for (let j = 0; j < apiWordList.length; j++) {
+              const apiWord = apiWordList[j].toLowerCase();
+              if (words.includes(apiWord)) {
+                wordSet.push(apiWord);
+                for (let k = 0; k < localRhymesArray.length; k++) {
+                  if (localRhymesArray[k].includes(apiWord)) {
+                    localRhymesArray[k].push(word);
+                    breakFlag = true;
+                    wordSet = [];
+                    break;
+                  }
+                }
+                if (!localAlreadySearched.includes(apiWord)) {
+                  localAlreadySearched.push(apiWord);
+                }
+                if (breakFlag) {
+                  break
                 }
               }
-              if (!localAlreadySearched.includes(apiWord)) {
-                localAlreadySearched.push(apiWord);
-              }
-              if (breakFlag) {
-                break
-              }
             }
+  
+            if (wordSet.length > 1) {
+              localRhymesArray.push(wordSet);
+            }
+  
+            localApiCounter += 1;
+          } catch {
+            throw new Error('ERROR!!');
           }
-
-          if (wordSet.length > 1) {
-            localRhymesArray.push(wordSet);
-          }
-
-          localApiCounter += 1;
-        } catch {
-          throw new Error('ERROR!!');
         }
       }
-    }
-    var opacity = dark ? '40' : '59'; //Makes the color be 25% opacity if dark theme and 35% opacity if light theme
-    for (let i = 0; i < localRhymesArray.length; i++) {
-      if (localRhymesArray.length > localColorArray.length) {
-        var color = colors.splice(Math.floor(Math.random() * (colors.length)), 1);
-        localColorArray.push(color[0]);
+      var opacity = dark ? '40' : '59'; //Makes the color be 25% opacity if dark theme and 35% opacity if light theme
+      for (let i = 0; i < localRhymesArray.length; i++) {
+        if (localRhymesArray.length > localColorArray.length) {
+          var color = colors.splice(Math.floor(Math.random() * (colors.length)), 1);
+          localColorArray.push(color[0]);
+        }
+        for (let j = 0; j < localRhymesArray[i].length; j++) {
+          var index = html.toLowerCase().indexOf(localRhymesArray[i][j].toLowerCase());
+          var postIndex = index + localRhymesArray[i][j].length;
+          var replaceWord = html.slice(index, postIndex);
+          //console.log(index + " : " + postIndex);
+          var output = html.replaceAll(RegExp("\\b" + replaceWord + "\\b", "g"), `<mark style="background-color: ${localColorArray[i] + opacity}">${replaceWord}</mark>`);
+          html = output;
+        }
       }
-      for (let j = 0; j < localRhymesArray[i].length; j++) {
-        var index = html.toLowerCase().indexOf(localRhymesArray[i][j].toLowerCase());
-        var postIndex = index + localRhymesArray[i][j].length;
-        var replaceWord = html.slice(index, postIndex);
-        //console.log(index + " : " + postIndex);
-        var output = html.replaceAll(RegExp("\\b" + replaceWord + "\\b", "g"), `<mark style="background-color: ${localColorArray[i] + opacity}">${replaceWord}</mark>`);
-        html = output;
-      }
+      setRhymesArray(localRhymesArray);
+      setApiCounter(localApiCounter);
+      setAlreadySearched(localAlreadySearched);
+      editor?.commands.clearContent();
+      editor?.commands.insertContent(html);
+      setColorArray(localColorArray);
+      setIsLoading(false);
+    } else { // This happens when the un-highlight button is pressed
+      let html = editor.getHTML();
+      html = html.replace(/<mark.*?>/g, '');
+      html = html.replace(/<\/mark>/g, '');
+      editor.commands.clearContent();
+      editor.commands.insertContent(html);
     }
-    setRhymesArray(localRhymesArray);
-    setApiCounter(localApiCounter);
-    setAlreadySearched(localAlreadySearched);
-    editor?.commands.clearContent();
-    editor?.commands.insertContent(html);
-    setColorArray(localColorArray);
-    setIsLoading(false);
   };
   useEffect(() => {
     console.log(apiCounter);
@@ -442,6 +453,30 @@ function MainApp() {
     });
     return () => {
       authStateListener();
+    };
+  }, []);
+
+  // Key logic checker
+  useEffect(() => {
+    const keyDownHandler = (event) => {
+      if (event.key === 'Shift') {
+        event.preventDefault();
+        setIsShift(true);
+      }
+    };
+  
+    const keyUpHandler = (event) => {
+      if (event.key === 'Shift') {
+        setIsShift(false);
+      }
+    };
+  
+    document.addEventListener('keydown', keyDownHandler);
+    document.addEventListener('keyup', keyUpHandler);
+  
+    return () => {
+      document.removeEventListener('keydown', keyDownHandler);
+      document.removeEventListener('keyup', keyUpHandler);
     };
   }, []);
 
@@ -670,6 +705,51 @@ function MainApp() {
       },
       onConfirm: () => handleDelete(sid, title),
     });
+  const syllableCounter = (word) => {
+    word = word.toLowerCase();
+    if(word.length <= 3) { return 1; }
+      word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
+      word = word.replace(/^y/, '');
+      return word.match(/[aeiouy]{1,2}/g).length;
+  }
+  const extractLinesAndCountSyllables = (text) => {
+    setSyllableList([]);
+    let Text = text.replace(/<mark.*?>/g, '');
+    Text = Text.replace(/<\/mark>/g, '');
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(Text, 'text/html');
+    const elements = Array.from(doc.body.children);
+
+    let linesArray = elements.map((element) => {
+      if (element.tagName === 'H2') {
+        return '-1';
+      } else if (element.tagName === 'H3') {
+        return '0';
+      } else if (element.tagName === 'P') {
+        return element.textContent.trim() || '-2';
+      } else {
+        return '0';
+      }
+    });
+    linesArray = linesArray.map((l) => {
+      if(l == '0') {
+        return 0;
+      } else if(l == '-1') {
+        return -1;
+      } else if (l == '-2') {
+        return -2;
+      } else {
+        let lineSyllables = 0;
+        const words = l.split(' ');
+        for(let i = 0; i < words.length; i++) {
+          lineSyllables += syllableCounter(words[i]);
+        }
+        return lineSyllables;
+      }
+    });
+    setSyllableList(linesArray);
+  };
   const [editable, setEditable] = useState(true);
   const editor = useEditor({
     editable,
@@ -695,6 +775,7 @@ function MainApp() {
           }
         }, 1500);
       }
+      extractLinesAndCountSyllables(html);
     },
   });
 
@@ -724,15 +805,16 @@ function MainApp() {
       padding="md"
       fixed={false}
       navbarOffsetBreakpoint="sm"
+      height="100%"
       header={
         <Header height={60}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Title order={1} ta="center">Lyricend</Title>
+            <Title order={1} ta="center" style={{ WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}}>Lyricend</Title>
           </div>
         </Header>
       }
       navbar={
-        <Navbar p="xs" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 250, lg: 400 }}>
+        <Navbar p="xs" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 250, lg: 300 }}>
           <Navbar.Section mt="xs">
             <Box
               sx={(theme) => ({
@@ -744,11 +826,9 @@ function MainApp() {
               })}
             >
               <Group position="apart">
-                <Title order={3}>Projects</Title>
+                <Title order={3} style={{ WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}}>Projects</Title>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <Tooltip label="Get PDF" color='blue' withArrow position="bottom" openDelay={1000}>
-                    <ActionIcon variant='default' onClick={() => generatePDF(editor.getHTML())} style={{ marginRight: '0.5rem' }} size={30}><IconPrinter size="1rem" /></ActionIcon>
-                  </Tooltip>
+                  { editor.getText() === '' || isShift ?
                   <Tooltip label="New Song" color='blue' withArrow position="bottom" openDelay={1000}>
                     <ActionIcon variant="default" onClick={() => {
                       if (editor.getText() === '' || isSaved) {
@@ -779,7 +859,8 @@ function MainApp() {
                       }
                     }} style={{ marginRight: '0.5rem' }} size={30}><IconPlus size="1rem" /></ActionIcon>
                   </Tooltip>
-                  {editor.getText() !== '' ? (<Tooltip label="Save" color='blue' withArrow position="bottom" openDelay={1000}>
+                  : (<></>)}
+                  {editor.getText() !== '' && !isShift ? (<Tooltip label="Save" color='blue' withArrow position="bottom" openDelay={1000}>
                     <ActionIcon variant="default" onClick={() => handleSave()} style={{ marginRight: '0.5rem' }} size={30}>
                       {isSaved === true ? <IconFileCheck size="1rem" color="teal" /> : <IconFile size="1rem" />}
                     </ActionIcon>
@@ -948,15 +1029,21 @@ function MainApp() {
               onChange={(event) => setFilterQuery(event.currentTarget.value)}
               placeholder="Search in your songs..."
               dropdownPosition="top"
+              rightSection={
+                <CloseButton
+                  aria-label="Clear input"
+                  onClick={() => setFilterQuery('')}
+                  style={{ display: filterQuery ? undefined : 'none' }}
+                />}
             />
-            <isSavedCtx.Provider value={{ isSaved, setIsSaved, editor, numOfRhymes, setNumOfRhymes, advancedChecked, setAdvancedChecked }}>
+            <isSavedCtx.Provider value={{ isSaved, setIsSaved, editor, numOfRhymes, setNumOfRhymes, advancedChecked, setAdvancedChecked, toggleColorScheme, dark }}>
               <UserPanel />
             </isSavedCtx.Provider>
           </Navbar.Section>
         </Navbar>
       }
       aside={
-        <Navbar p="xs" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 250, lg: 400 }}>
+        <Navbar p="xs" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 250, lg: 300 }}>
           <Navbar.Section mt="xs">
             <Box
               sx={(theme) => ({
@@ -970,16 +1057,16 @@ function MainApp() {
               })}
             >
               <Group position="apart">
-                <Title order={3} >Tools {isLoading && <Loader color="pink" variant="dots" size="sm" />}{' '}</Title>
+                <Title order={3} style={{ WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}} >Tools {isLoading && <Loader color="pink" variant="dots" size="sm" />}{' '}</Title>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <Tooltip label="Highlight" color="blue" withArrow position="bottom" openDelay={1000}>
+                  <Tooltip label={!isShift ? "Highlight" : "Un-highligh"} color="blue" withArrow position="bottom" openDelay={1000}>
                     <ActionIcon
                       variant="default"
                       onClick={() => highlighterF(editor.getText(), editor.getHTML())}
                       title="Toggle color scheme"
                       style={{ marginRight: '0.5rem' }}
                     >
-                      <IconHighlight size="1.1rem" />
+                      {!isShift ? <IconHighlight size="1.1rem" /> : <IconHighlightOff size="1.1rem" />}
                     </ActionIcon>
                   </Tooltip>
                   <Tooltip label={editor.isEditable ? 'Lock' : 'Unlock'} color="blue" withArrow position="bottom" openDelay={1000}>
@@ -996,15 +1083,8 @@ function MainApp() {
                       )}
                     </ActionIcon>
                   </Tooltip>
-                  <Tooltip label={dark ? 'Light Mode' : 'Dark Mode'} color="blue" withArrow position="bottom" openDelay={1000}>
-                    <ActionIcon
-                      variant="default"
-                      color={dark ? 'yellow' : 'blue'}
-                      onClick={() => toggleColorScheme()}
-                      title="Toggle color scheme"
-                    >
-                      {dark ? <IconSun size="1.1rem" /> : <IconMoonStars size="1.1rem" />}
-                    </ActionIcon>
+                  <Tooltip label="Get PDF" color='blue' withArrow position="bottom" openDelay={1000}>
+                    <ActionIcon variant='default' onClick={() => generatePDF(editor.getHTML())} style={{ marginRight: '0.5rem' }} size={30}><IconPrinter size="1rem" /></ActionIcon>
                   </Tooltip>
                 </div>
               </Group>
@@ -1251,8 +1331,14 @@ function MainApp() {
         },
       })}>
       <div className="App">
-        <div className="container">
+        <div className="container" heigh="100%">
           <RichTextEditor editor={editor} style={{ width: "100%" }}>
+          <ScrollArea h="calc(95vh - var(--app-shell-header-height, 60px))" w="100%" type="none" style={{backgroundColor: dark ? "#1A1B1E" : 'white'}}>
+            <Grid columns={48} gutter={{ base: 0, sm: 0, md: 0 }}>
+              <Grid.Col span={4}>
+                <Container w="20px" h="100%" bg={dark ? "#1A1B1E" : 'white'}></Container>
+              </Grid.Col>
+              <Grid.Col span={40}>
             {editor && (
               <>
                 <BubbleMenu editor={editor} style={{ display: 'flex' }}>
@@ -1315,6 +1401,30 @@ function MainApp() {
               </>
             )}
             <RichTextEditor.Content value={text} />
+            </Grid.Col> {/* This is for aligning the nums */}
+            <Grid.Col span={4}>
+              <Container w="10px" h="100%" bg={dark ? "#1A1B1E" : 'white'}>
+                {syllableList.length != 1 ? syllableList.map((number, index) => (
+                  number == -1 ? 
+                    <Text key={index} style={{ marginBottom: '40px', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}}>
+                      {String.fromCharCode(160) /* Page Title */}
+                    </Text>
+                  : number == 0 ?
+                    <Text key={index} style={{ marginBottom: '13px', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}}>
+                      {String.fromCharCode(160) /* Section Header */}
+                    </Text>
+                  : number == -2 ?
+                    <Text key={index} style={{ marginBottom: '8px', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}}>
+                      {String.fromCharCode(160) /* Empty Line */}
+                    </Text>
+                  : <Text key={index} style={{ marginBottom: '8px', marginRight: '8px', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}} c="dimmed">
+                      {number /* Line */}
+                    </Text>
+                )) : <></>}
+              </Container>
+            </Grid.Col>
+            </Grid>
+          </ScrollArea>
           </RichTextEditor>
         </div>
         <AuthenticationForm />

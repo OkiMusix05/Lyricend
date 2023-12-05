@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useContext, createContext, useRef } from 'react';
-import { IconChevronRight, IconChevronLeft, IconAt, IconArrowRight, IconCheck, IconUpload, IconPhoto, IconX, IconMinus, IconPlus } from '@tabler/icons-react';
-import { UnstyledButton, Group, Avatar, Text, Box, useMantineTheme, rem, Button, Skeleton, Grid, ActionIcon, Flex, Image, Kbd, LoadingOverlay, NumberInput, createStyles, Checkbox, Indicator } from '@mantine/core';
+import { IconChevronRight, IconChevronLeft, IconAt, IconArrowRight, IconCheck, IconUpload, IconPhoto, IconX, IconMinus, IconPlus, IconSun, IconMoonStars } from '@tabler/icons-react';
+import { UnstyledButton, Group, Avatar, Text, Box, useMantineTheme, rem, Button, Skeleton, Grid, ActionIcon, Flex, Image, Kbd, LoadingOverlay, NumberInput, createStyles, Checkbox, Indicator, Tooltip } from '@mantine/core';
 import { auth, storage } from '../config/firebase';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged, updateProfile } from "firebase/auth";
@@ -28,7 +28,7 @@ export function UserPanel() {
             isSigned = false
         }
     });*/
-    const { isSaved, editor, numOfRhymes, setNumOfRhymes, advancedChecked, setAdvancedChecked } = useContext(isSavedCtx);
+    const { isSaved, editor, numOfRhymes, setNumOfRhymes, advancedChecked, setAdvancedChecked, toggleColorScheme, dark } = useContext(isSavedCtx);
     const [isSigned, setIsSigned] = useState(false);
     const [displayName, setDP] = useState('');
     const [userEmail, setUE] = useState('');
@@ -261,12 +261,27 @@ export function UserPanel() {
             <Modal opened={STmodal} onClose={close} withCloseButton={false} size="40rem" trapFocus overlayProps={{
                 opacity: 0.55,
                 blur: 1.5,
-            }} centered><Paper radius="md" p="xl" withBorder>
+            }} centered>
+                <Paper radius="md" p="xl" withBorder>
                     <Box>
                         <LoadingOverlay visible={pfpUpdateVisible} overlayBlur={2} />
-                        <Text size="lg" weight={500}>
-                            Settings
-                        </Text>
+                        <Group position="apart">
+                            <Text size="lg" weight={500}>
+                                Settings
+                            </Text>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <Tooltip label={dark ? 'Light Mode' : 'Dark Mode'} color="blue" withArrow position="bottom" openDelay={1000}>
+                                    <ActionIcon
+                                        variant="default"
+                                        color={dark ? 'yellow' : 'blue'}
+                                        onClick={() => toggleColorScheme()}
+                                        title="Toggle color scheme"
+                                    >
+                                        {dark ? <IconSun size="1.1rem" /> : <IconMoonStars size="1.1rem" />}
+                                    </ActionIcon>
+                                </Tooltip>
+                            </div>
+                        </Group>
                         <Grid>
                             <Grid.Col span="auto">
                                 <Text fw={400} style={{ marginBottom: '0.2rem' }}>Change Username</Text>
