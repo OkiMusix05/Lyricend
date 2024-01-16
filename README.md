@@ -20,4 +20,5 @@ This project is still in alpha and it's not open source.
 - v0.33: Advanced Tools, undo/redo, profile logging in db; with Build
 - v0.4: Added the rhyme highlighting functionality for everybody. Still have to make it a premium feature; with Build
 - v0.5: Added toggle highlight hotkey AND Print PDF button - basic; with Build
-- v0.55: Syllable counting and shift functionality; with Build
+- v0.55: Named *some commit comment* idk why. Syllable counting and shift functionality; with Build
+- v0.56: Better song section adder and wifi indicator

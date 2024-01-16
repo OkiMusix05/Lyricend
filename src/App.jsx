@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import { useState, useRef, useEffect, createContext, useContext } from 'react';
-import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, rem, useMantineTheme, Skeleton, Container, Overlay, CloseButton } from '@mantine/core';
-import { useLocalStorage, useHotkeys, useColorScheme } from '@mantine/hooks';
+import { Center, ColorSchemeProvider, useMantineColorScheme, MantineProvider, rem, useMantineTheme, Skeleton, Container, Overlay, CloseButton, Menu, Popover } from '@mantine/core';
+import { useLocalStorage, useHotkeys, useColorScheme, getHotkeyHandler, useDocumentTitle, useNetwork, useDidUpdate } from '@mantine/hooks';
 import { UserPanel } from './Components/_user.tsx';
 //import { SearchSongInput } from './Components/_songSearch.tsx';
-import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon, IconFileUnknown, IconHighlight, IconHighlightOff, IconPrinter } from '@tabler/icons-react';
+import { IconSettings, IconLockOpen, IconLock, IconFile, IconFileCheck, IconFilePencil, IconTrash, IconTrashOff, IconSun, IconMoonStars, IconPlus, IconAlertHexagon, IconFileUnknown, IconHighlight, IconHighlightOff, IconPrinter, IconWifiOff, IconMoon, IconGrillFork, IconArrowBarToLeft, IconBallpen } from '@tabler/icons-react';
 import { RichTextEditor } from '@mantine/tiptap';
 import { useEditor, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -54,11 +54,12 @@ export const isSavedCtx = createContext({});
 //let numOfRhymes = 8;
 
 export default function App() {
-  const [colorScheme, setColorScheme] = useLocalStorage({ key: 'mantine-color-scheme', defaultValue: 'dark' });
+  const [colorScheme, setColorScheme] = useLocalStorage({ key: 'mantine-color-scheme', defaultValue: 'dark'});
 
   const toggleColorScheme = (value) =>
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
 
+  // General Hotkeys
   useHotkeys([['mod+J', () => toggleColorScheme()]]);
   return (
     <>
@@ -86,10 +87,18 @@ function RoutesManager() {
 }
 
 function MainApp() {
+  //Interesting useless things I did cause I like procrastinating
+  const [pageTitle, setPageTitle] = useState('');
+  useDocumentTitle(pageTitle);
+  const [wifi, setWifi] = useState(true);
+  const networkStatus = useNetwork();
+
   //Hotkeys
   useHotkeys([['mod+Z', () => editor.commands.undo()]]);
   useHotkeys([['mod+shift+Z', () => editor.commands.redo()]]);
   useHotkeys([['mod+shift+H', () => { toggleHighlights() }]]);
+  useHotkeys([['mod+S', () => handleSave()],
+              ['mod+shift+J', () => handleCreate()]]);
   const toggleHighlights = () => {
     let html = editor.getHTML();
 
@@ -289,6 +298,18 @@ function MainApp() {
   useEffect(() => {
     console.log(apiCounter);
   }, [apiCounter]);
+
+  // Network Warnings
+  useDidUpdate(() => {
+    if(!networkStatus.online) {
+      setWifi(false);
+      setPageTitle('Lyricend | Offline');
+    } else if(networkStatus.online) {
+      setWifi(true);
+      setPageTitle('Lyricend');
+    }
+  }, [networkStatus]);
+  
   //Master Rhyme Function - There used to be 2 functions but now it's just one with the common logic
   const rhymeF = async (word, where) => {
     let look;
@@ -536,7 +557,7 @@ function MainApp() {
       styles: (theme) => ({
         root: {
           backgroundColor: theme.colors.white,
-          borderColor: theme.colors.red,
+          borderColor: theme.colors.teal,
 
           '&::before': { backgroundColor: theme.colors.teal[6] },
         },
@@ -586,6 +607,7 @@ function MainApp() {
               _colorArray: colorArray,
             });
             succSave(key);
+            setPageTitle(`Lyricend / ${key}`);
           } catch (error) {
             nonSave(error.code);
             throw error;
@@ -601,6 +623,7 @@ function MainApp() {
               _colorArray: colorArray,
             });
             succSave(key);
+            setPageTitle(`Lyricend / ${key}`);
             setOpenId(docRef.id);
           } catch (error) {
             nonSave(error.code);
@@ -609,6 +632,7 @@ function MainApp() {
         }
       }
     }
+
   };
   /*useEffect(() => {
     console.log("openID: " + openID)
@@ -641,6 +665,7 @@ function MainApp() {
         }),
       });
       setFilterQuery('');
+      setPageTitle(`Lyricend / ${title}`);
     } else {
       notifications.show({
         title: 'Editor is Locked',
@@ -668,6 +693,7 @@ function MainApp() {
         },
       }),
     });
+    setPageTitle(`Lyricend / Untitled New`);
   }
   //Delete File
   const handleDelete = async (sid, title) => {
@@ -684,6 +710,7 @@ function MainApp() {
     setApiCounter(0);
     setAlreadySearched([]);
     setColorArray([]);
+    setPageTitle(`Lyricend`);
   }
   //Verification Modals
   const openDeleteModal = (sid, title) =>
@@ -800,6 +827,13 @@ function MainApp() {
     }
   }
 
+  const scaleX = { // Transition
+    in: { opacity: 1, transform: 'scaleX(1)' },
+    out: { opacity: 0, transform: 'scaleX(0)' },
+    common: { transformOrigin: 'right' },
+    transitionProperty: 'transform, opacity',
+  };
+
   return (
     <AppShell
       padding="md"
@@ -810,6 +844,7 @@ function MainApp() {
         <Header height={60}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Title order={1} ta="center" style={{ WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}}>Lyricend</Title>
+            {!wifi ? <><Title style={{ WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}}>{String.fromCharCode(160)}</Title><IconWifiOff size="2rem"/></> : <></>}
           </div>
         </Header>
       }
@@ -1332,7 +1367,10 @@ function MainApp() {
       })}>
       <div className="App">
         <div className="container" heigh="100%">
-          <RichTextEditor editor={editor} style={{ width: "100%" }}>
+          <RichTextEditor editor={editor} style={{ width: "100%" }} onKeyDown={getHotkeyHandler([
+            ['mod+S', handleSave],
+            ['mod+shift+J', handleCreate]
+          ])}>
           <ScrollArea h="calc(95vh - var(--app-shell-header-height, 60px))" w="100%" type="none" style={{backgroundColor: dark ? "#1A1B1E" : 'white'}}>
             <Grid columns={48} gutter={{ base: 0, sm: 0, md: 0 }}>
               <Grid.Col span={4}>
@@ -1365,48 +1403,59 @@ function MainApp() {
                   </Button>
                 </BubbleMenu>
                 <FloatingMenu editor={editor}>
-                  <RichTextEditor.ControlsGroup>
-                    <RichTextEditor.Control
-                      onClick={() => { editor?.commands.insertContent('<h3>verse</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}
-                      title="Intro"
-                    >
-                      <Text size="0.6rem">verse</Text>
-                    </RichTextEditor.Control>
-                    <RichTextEditor.Control
-                      onClick={() => { editor?.commands.insertContent('<h3>pre chorus</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}
-                      title="Pre-chorus"
-                    >
-                      <Text size="0.6rem"> pre </Text>
-                    </RichTextEditor.Control>
-                    <RichTextEditor.Control
-                      onClick={() => { editor?.commands.insertContent('<h3>chorus</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}
-                      title="Chorus"
-                    >
-                      <Text size="0.6rem">chorus</Text>
-                    </RichTextEditor.Control>
-                    <RichTextEditor.Control
-                      onClick={() => { editor?.commands.insertContent('<h3>bridge</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}
-                      title="Bridge"
-                    >
-                      <Text size="0.6rem">bridge</Text>
-                    </RichTextEditor.Control>
-                    <RichTextEditor.Control
-                      onClick={() => { editor?.commands.insertContent('<mark>mark</mark>'); editor?.commands.enter(); editor?.commands.focus(); }}
-                      title="Bridge"
-                    >
-                      <Text size="0.6rem">mark</Text>
-                    </RichTextEditor.Control>
-                  </RichTextEditor.ControlsGroup>
+                  {/* Possible Items for Floating Menu here */}
                 </FloatingMenu>
               </>
             )}
             <RichTextEditor.Content value={text} />
             </Grid.Col> {/* This is for aligning the nums */}
             <Grid.Col span={4}>
+              {editor.getText() !== '' ? // TODO: Make the button stay fixed in place
+              <Menu withArrow width={240} shadow="md" position="left" trigger="hover" transitionProps={{ transition: scaleX, duration: 150 }} style={{position: 'sticky', top: '0'}}>
+                <Menu.Target>
+                <Center> 
+                    <ActionIcon variant="default" size={30} style={{marginTop: '10px', marginRight: '3px'}}>
+                      <IconBallpen size="1rem"/>
+                    </ActionIcon>
+                  </Center>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Center style={{marginTop: '-10px', marginLeft: '3px'}}>
+                    <Grid justify="space-around" align="center" columns={15} gutter="xs">
+                      <Grid.Col span={3}>
+                        <ActionIcon variant="default" size="lg" style={{marginTop: '10px', marginRight: '3px'}} onClick={() => { editor?.commands.insertContent('<h3>verse</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}>
+                        <Text c="dimmed">V</Text>
+                        </ActionIcon>
+                      </Grid.Col>
+                      <Grid.Col span={3}>
+                        <ActionIcon variant="default" size="lg" style={{marginTop: '10px', marginRight: '3px'}} onClick={() => { editor?.commands.insertContent('<h3>pre chorus</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}>
+                          <Text c="dimmed">P</Text>
+                        </ActionIcon>
+                      </Grid.Col>
+                      <Grid.Col span={3}>
+                        <ActionIcon variant="default" size="lg" style={{marginTop: '10px', marginRight: '3px'}} onClick={() => { editor?.commands.insertContent('<h3>chorus</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}>
+                          <Text c="dimmed">C</Text>
+                        </ActionIcon>
+                      </Grid.Col>
+                      <Grid.Col span={3}>
+                        <ActionIcon variant="default" size="lg" style={{marginTop: '10px', marginRight: '3px'}} onClick={() => { editor?.commands.insertContent('<h3>bridge</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}>
+                          <Text c="dimmed">B</Text>
+                        </ActionIcon>
+                      </Grid.Col>
+                      <Grid.Col span={3}>
+                        <ActionIcon variant="default" size="lg" style={{marginTop: '10px', marginRight: '3px'}} onClick={() => { editor?.commands.insertContent('<h3>section</h3>'); editor?.commands.enter(); editor?.commands.focus(); }}>
+                          <Text c="dimmed">O</Text>
+                        </ActionIcon>
+                      </Grid.Col>
+                    </Grid>
+                  </Center>
+                </Menu.Dropdown>
+              </Menu> 
+              : <></>}
               <Container w="10px" h="100%" bg={dark ? "#1A1B1E" : 'white'}>
                 {syllableList.length != 1 ? syllableList.map((number, index) => (
                   number == -1 ? 
-                    <Text key={index} style={{ marginBottom: '40px', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}}>
+                    <Text key={index} style={{ marginBottom: '0px', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none'}}>
                       {String.fromCharCode(160) /* Page Title */}
                     </Text>
                   : number == 0 ?
